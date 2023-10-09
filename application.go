@@ -1,7 +1,20 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		panic(err)
+	}
+
+}
 
 func main() {
-	fmt.Println("Application Run ...")
+	local_db := os.Getenv("LOCAL_DB")
+	fmt.Println("Application Run ...", local_db)
 }
