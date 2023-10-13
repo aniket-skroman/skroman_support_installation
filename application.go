@@ -31,7 +31,7 @@ func main() {
 
 	store := apis.NewStore(db)
 
-	router := gin.Default()
+	router := gin.New()
 
 	router.Use(cors.New(CORSConfig()))
 	router.Static("static", "static")
