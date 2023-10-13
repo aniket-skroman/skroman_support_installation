@@ -15,6 +15,8 @@ func BuildSuccessResponse(msg, data_name string, data interface{}) map[string]in
 	return response_builder(true, &msg, &EmptyStr, &data_name, &data)
 }
 
-func BuildFailedResponse(msg, err, data_name string, data interface{}) map[string]interface{} {
-	return response_builder(false, &FAILED_PROCESS, &err, &data_name, &data)
+func BuildFailedResponse(err string) map[string]interface{} {
+	var data interface{}
+	data = EmptyObj{}
+	return response_builder(false, &FAILED_PROCESS, &err, &COMPLAINT_DATA, &data)
 }

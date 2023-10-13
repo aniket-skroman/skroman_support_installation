@@ -46,7 +46,9 @@ var USER_TYPE = ""
 
 // DATA --------------- Response Key Words ------------//
 const DATA = "app_data"
-const USER_DATA = "user_data"
+
+var COMPLAINT_DATA = "user_data"
+
 const PERMISSION_DATA = "permissions"
 const USER_PERMISSION = "user_permission"
 const MODULE_DATA = "module_data"
@@ -57,3 +59,6 @@ const PERMISSION_NOT_FOUND = "permission not found"
 const PERMISSION_FOUND = "Permission found."
 const PERMISSION_UPDATE_FAILED = "permission update failed please try again"
 const HAS_NOT_PERMISSION = "You don't have permission to perform this action"
+
+// ---------------------------- COMPLAINTS --------------------------------- //
+const COMPLAINT_CREATED = "complaint has been created"
