@@ -13,41 +13,101 @@ import (
 	"github.com/google/uuid"
 )
 
+const addDeviceImages = `-- name: AddDeviceImages :one
+insert into device_images (
+    complaint_info_id,
+    device_image
+) values (
+    $1, $2
+) returning id, complaint_info_id, device_image, created_at, updated_at
+`
+
+type AddDeviceImagesParams struct {
+	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
+	DeviceImage     string    `json:"device_image"`
+}
+
+func (q *Queries) AddDeviceImages(ctx context.Context, arg AddDeviceImagesParams) (DeviceImages, error) {
+	row := q.db.QueryRowContext(ctx, addDeviceImages, arg.ComplaintInfoID, arg.DeviceImage)
+	var i DeviceImages
+	err := row.Scan(
+		&i.ID,
+		&i.ComplaintInfoID,
+		&i.DeviceImage,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createComplaint = `-- name: CreateComplaint :one
-insert into complaint (
+insert into complaints (
     client_id,
+    created_by
+) values (
+    $1,$2
+) returning id, client_id, created_by, created_at, updated_at
+`
+
+type CreateComplaintParams struct {
+	ClientID  string    `json:"client_id"`
+	CreatedBy uuid.UUID `json:"created_by"`
+}
+
+func (q *Queries) CreateComplaint(ctx context.Context, arg CreateComplaintParams) (Complaints, error) {
+	row := q.db.QueryRowContext(ctx, createComplaint, arg.ClientID, arg.CreatedBy)
+	var i Complaints
+	err := row.Scan(
+		&i.ID,
+		&i.ClientID,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createComplaintInfo = `-- name: CreateComplaintInfo :one
+insert into complaint_info (
+    complaint_id,
     device_id,
+    device_type,
+    device_model,
     problem_statement,
     problem_category,
     client_available,
     status
 ) values (
-    $1,$2,$3,$4,$5,$6
-) returning id, client_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at
+    $1,$2,$3,$4,$5,$6,$7,$8
+) returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model
 `
 
-type CreateComplaintParams struct {
-	ClientID         uuid.UUID      `json:"client_id"`
-	DeviceID         uuid.UUID      `json:"device_id"`
+type CreateComplaintInfoParams struct {
+	ComplaintID      uuid.UUID      `json:"complaint_id"`
+	DeviceID         string         `json:"device_id"`
+	DeviceType       sql.NullString `json:"device_type"`
+	DeviceModel      sql.NullString `json:"device_model"`
 	ProblemStatement string         `json:"problem_statement"`
 	ProblemCategory  sql.NullString `json:"problem_category"`
 	ClientAvailable  time.Time      `json:"client_available"`
 	Status           string         `json:"status"`
 }
 
-func (q *Queries) CreateComplaint(ctx context.Context, arg CreateComplaintParams) (Complaint, error) {
-	row := q.db.QueryRowContext(ctx, createComplaint,
-		arg.ClientID,
+func (q *Queries) CreateComplaintInfo(ctx context.Context, arg CreateComplaintInfoParams) (ComplaintInfo, error) {
+	row := q.db.QueryRowContext(ctx, createComplaintInfo,
+		arg.ComplaintID,
 		arg.DeviceID,
+		arg.DeviceType,
+		arg.DeviceModel,
 		arg.ProblemStatement,
 		arg.ProblemCategory,
 		arg.ClientAvailable,
 		arg.Status,
 	)
-	var i Complaint
+	var i ComplaintInfo
 	err := row.Scan(
 		&i.ID,
-		&i.ClientID,
+		&i.ComplaintID,
 		&i.DeviceID,
 		&i.ProblemStatement,
 		&i.ProblemCategory,
@@ -55,34 +115,37 @@ func (q *Queries) CreateComplaint(ctx context.Context, arg CreateComplaintParams
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeviceType,
+		&i.DeviceModel,
 	)
 	return i, err
 }
 
-const getComplaints = `-- name: GetComplaints :many
-select id, client_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at from complaint
-order by id
+const fetchAllComplaints = `-- name: FetchAllComplaints :many
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model from complaint_info
+where status ='INIT'
+order by created_at desc 
 limit $1
 offset $2
 `
 
-type GetComplaintsParams struct {
+type FetchAllComplaintsParams struct {
 	Limit  int32 `json:"limit"`
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) GetComplaints(ctx context.Context, arg GetComplaintsParams) ([]Complaint, error) {
-	rows, err := q.db.QueryContext(ctx, getComplaints, arg.Limit, arg.Offset)
+func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaintsParams) ([]ComplaintInfo, error) {
+	rows, err := q.db.QueryContext(ctx, fetchAllComplaints, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Complaint{}
+	items := []ComplaintInfo{}
 	for rows.Next() {
-		var i Complaint
+		var i ComplaintInfo
 		if err := rows.Scan(
 			&i.ID,
-			&i.ClientID,
+			&i.ComplaintID,
 			&i.DeviceID,
 			&i.ProblemStatement,
 			&i.ProblemCategory,
@@ -90,6 +153,8 @@ func (q *Queries) GetComplaints(ctx context.Context, arg GetComplaintsParams) ([
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DeviceType,
+			&i.DeviceModel,
 		); err != nil {
 			return nil, err
 		}

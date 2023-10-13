@@ -14,7 +14,7 @@ var (
 	testQueries *sqlc_lib.Queries
 	testDB      *sql.DB
 	db_driver   = "postgres"
-	db_source   = "postgresql://postgres:root@localhost:5432/postgres?sslmode=disable"
+	db_source   = "postgresql://postgres:support12@skroman-user.ckwveljlsuux.ap-south-1.rds.amazonaws.com:5432/skroman_client_complaints"
 )
 
 func TestMain(t *testing.M) {

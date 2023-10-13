@@ -11,14 +11,32 @@ import (
 	"github.com/google/uuid"
 )
 
-type Complaint struct {
+type ComplaintInfo struct {
 	ID               uuid.UUID      `json:"id"`
-	ClientID         uuid.UUID      `json:"client_id"`
-	DeviceID         uuid.UUID      `json:"device_id"`
+	ComplaintID      uuid.UUID      `json:"complaint_id"`
+	DeviceID         string         `json:"device_id"`
 	ProblemStatement string         `json:"problem_statement"`
 	ProblemCategory  sql.NullString `json:"problem_category"`
 	ClientAvailable  time.Time      `json:"client_available"`
 	Status           string         `json:"status"`
 	CreatedAt        time.Time      `json:"created_at"`
 	UpdatedAt        time.Time      `json:"updated_at"`
+	DeviceType       sql.NullString `json:"device_type"`
+	DeviceModel      sql.NullString `json:"device_model"`
+}
+
+type Complaints struct {
+	ID        uuid.UUID `json:"id"`
+	ClientID  string    `json:"client_id"`
+	CreatedBy uuid.UUID `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type DeviceImages struct {
+	ID              uuid.UUID `json:"id"`
+	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
+	DeviceImage     string    `json:"device_image"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
