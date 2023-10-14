@@ -168,3 +168,64 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 	}
 	return items, nil
 }
+
+const fetchDeviceImagesByComplaintId = `-- name: FetchDeviceImagesByComplaintId :many
+select id, complaint_info_id, device_image, created_at, updated_at from device_images
+where complaint_info_id = $1
+`
+
+func (q *Queries) FetchDeviceImagesByComplaintId(ctx context.Context, complaintInfoID uuid.UUID) ([]DeviceImages, error) {
+	rows, err := q.db.QueryContext(ctx, fetchDeviceImagesByComplaintId, complaintInfoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeviceImages{}
+	for rows.Next() {
+		var i DeviceImages
+		if err := rows.Scan(
+			&i.ID,
+			&i.ComplaintInfoID,
+			&i.DeviceImage,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const uploadDeviceImages = `-- name: UploadDeviceImages :one
+insert into device_images(
+    complaint_info_id,
+    device_image
+) values (
+    $1, $2
+) returning id, complaint_info_id, device_image, created_at, updated_at
+`
+
+type UploadDeviceImagesParams struct {
+	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
+	DeviceImage     string    `json:"device_image"`
+}
+
+func (q *Queries) UploadDeviceImages(ctx context.Context, arg UploadDeviceImagesParams) (DeviceImages, error) {
+	row := q.db.QueryRowContext(ctx, uploadDeviceImages, arg.ComplaintInfoID, arg.DeviceImage)
+	var i DeviceImages
+	err := row.Scan(
+		&i.ID,
+		&i.ComplaintInfoID,
+		&i.DeviceImage,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

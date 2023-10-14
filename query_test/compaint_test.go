@@ -1,14 +1,23 @@
 package querytest
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -219,5 +228,89 @@ func TestFetchAllComplaints(t *testing.T) {
 				require.Empty(t, result)
 			}
 		})
+	}
+}
+
+var aws_access_key_id = "AKIA3VMV3LWIQ6EL63WU"
+var aws_secret_access_key = "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"
+var region = "ap-south-1"
+
+var bucket_name = "skromansupportbucket"
+
+// return file path
+func upload_image() string {
+	token := ""
+	creds := credentials.NewStaticCredentials(aws_access_key_id, aws_secret_access_key, token)
+	_, err := creds.Get()
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	cfg := aws.NewConfig().WithRegion("ap-south-1").WithCredentials(creds)
+	svc := s3.New(session.New(), cfg)
+
+	file, err := os.Open("./test.png")
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	defer file.Close()
+	fileInfo, _ := file.Stat()
+	size := fileInfo.Size()
+	buffer := make([]byte, size) // read file content to buffer
+
+	file.Read(buffer)
+	fileBytes := bytes.NewReader(buffer)
+	fileType := http.DetectContentType(buffer)
+	path := "media/" + file.Name()
+	params := &s3.PutObjectInput{
+		Bucket: aws.String(bucket_name),
+		Key:    aws.String(path),
+		Body:   fileBytes,
+
+		ContentLength: aws.Int64(size),
+		ContentType:   aws.String(fileType),
+	}
+	resp, err := svc.PutObject(params)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+
+	fmt.Printf("response %s", awsutil.StringValue(resp))
+	return path
+}
+
+func TestUploadDeviceImages(t *testing.T) {
+	path := upload_image()
+	complaint_id, err := uuid.Parse("3f5263f3-897f-463e-aa8a-186ab98ef371")
+
+	require.NoError(t, err)
+
+	args := db.UploadDeviceImagesParams{
+		ComplaintInfoID: complaint_id,
+		DeviceImage:     path,
+	}
+
+	device, err := testQueries.UploadDeviceImages(context.Background(), args)
+	require.NoError(t, err)
+	require.NotEmpty(t, device)
+
+	fmt.Printf("%v+\n", device)
+}
+
+func TestFetchImageFromS3(t *testing.T) {
+	complaint_id, err := uuid.Parse("3f5263f3-897f-463e-aa8a-186ab98ef371")
+	require.NoError(t, err)
+
+	device_images, err := testQueries.FetchDeviceImagesByComplaintId(context.Background(), complaint_id)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, device_images)
+	url := "https://skromansupportbucket.s3.ap-south-1.amazonaws.com/"
+	for _, img := range device_images {
+		img_path := fmt.Sprintf("%s%s", url, img.DeviceImage)
+
+		fmt.Println(img_path)
 	}
 }

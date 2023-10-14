@@ -22,6 +22,10 @@ type PaginationRequestParams struct {
 	PageSize int32 `uri:"page_size"`
 }
 
+type ImageRequestDTO struct {
+	ImagePath string `uri:"image_path"`
+}
+
 type ComplaintInfoDTO struct {
 	ID               uuid.UUID `json:"id"`
 	ComplaintID      uuid.UUID `json:"complaint_id"`

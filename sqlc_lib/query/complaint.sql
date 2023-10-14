@@ -35,3 +35,16 @@ where status ='INIT'
 order by created_at desc 
 limit $1
 offset $2;
+
+
+-- name: UploadDeviceImages :one
+insert into device_images(
+    complaint_info_id,
+    device_image
+) values (
+    $1, $2
+) returning *;
+
+-- name: FetchDeviceImagesByComplaintId :many
+select * from device_images
+where complaint_info_id = $1;
