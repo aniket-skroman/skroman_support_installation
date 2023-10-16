@@ -40,6 +40,15 @@ func (q *Queries) AddDeviceImages(ctx context.Context, arg AddDeviceImagesParams
 	return i, err
 }
 
+const countComplaints = `-- name: CountComplaints :execresult
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model from complaint_info
+where status = 'INIT'
+`
+
+func (q *Queries) CountComplaints(ctx context.Context) (sql.Result, error) {
+	return q.db.ExecContext(ctx, countComplaints)
+}
+
 const createComplaint = `-- name: CreateComplaint :one
 insert into complaints (
     client_id,
@@ -167,6 +176,57 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 		return nil, err
 	}
 	return items, nil
+}
+
+const fetchComplaintDetailByComplaint = `-- name: FetchComplaintDetailByComplaint :one
+select c.created_by as created_by,
+c.client_id as client, ci.device_id as device_id,
+ci.id as complaint_info_id,
+ci.problem_statement as problem_statement,
+ci.problem_category as problem_category,
+ci.client_available as client_available,
+ci.status as complaint_status,
+ci.device_model as device_model, ci.device_type as device_type,
+ci.created_at as complaint_raised_at, ci.updated_at as last_modified_at
+from complaints c
+inner join complaint_info ci 
+on c.id = ci.complaint_id
+where c.id = $1
+`
+
+type FetchComplaintDetailByComplaintRow struct {
+	CreatedBy         uuid.UUID      `json:"created_by"`
+	Client            string         `json:"client"`
+	DeviceID          string         `json:"device_id"`
+	ComplaintInfoID   uuid.UUID      `json:"complaint_info_id"`
+	ProblemStatement  string         `json:"problem_statement"`
+	ProblemCategory   sql.NullString `json:"problem_category"`
+	ClientAvailable   time.Time      `json:"client_available"`
+	ComplaintStatus   string         `json:"complaint_status"`
+	DeviceModel       sql.NullString `json:"device_model"`
+	DeviceType        sql.NullString `json:"device_type"`
+	ComplaintRaisedAt time.Time      `json:"complaint_raised_at"`
+	LastModifiedAt    time.Time      `json:"last_modified_at"`
+}
+
+func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.UUID) (FetchComplaintDetailByComplaintRow, error) {
+	row := q.db.QueryRowContext(ctx, fetchComplaintDetailByComplaint, id)
+	var i FetchComplaintDetailByComplaintRow
+	err := row.Scan(
+		&i.CreatedBy,
+		&i.Client,
+		&i.DeviceID,
+		&i.ComplaintInfoID,
+		&i.ProblemStatement,
+		&i.ProblemCategory,
+		&i.ClientAvailable,
+		&i.ComplaintStatus,
+		&i.DeviceModel,
+		&i.DeviceType,
+		&i.ComplaintRaisedAt,
+		&i.LastModifiedAt,
+	)
+	return i, err
 }
 
 const fetchDeviceImagesByComplaintId = `-- name: FetchDeviceImagesByComplaintId :many

@@ -21,10 +21,11 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	{
 		complaint.POST("/create-complaint", complaint_cont.CreateComplaint)
 		complaint.GET("/fetch-complaints/:page_id/:page_size", complaint_cont.FetchAllComplaints)
+		complaint.GET("/fetch-complaint", complaint_cont.FetchComplaintDetailByComplaint)
 	}
 
 	dummy_img := router.Group("/api")
 	{
-		dummy_img.GET("/dummy/:directory/:image_path", complaint_cont.FetchDummyURL)
+		dummy_img.GET("/device-image/:directory/:image_path", complaint_cont.FetchDummyURL)
 	}
 }

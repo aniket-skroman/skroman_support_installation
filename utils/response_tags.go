@@ -35,10 +35,12 @@ const PERMISSION_DENIED = "permission denied"
 const URL_EXPIRED = "location url expired please try with another url"
 
 // REQUEST_HOST -------------- BACKEND DEV VARIABLES -----------//S
-const REQUEST_HOST = ""
-const CURRENT_IDX = 0
-const PREVIOUS_IDX = 0
-const TOTALCOUNT int64 = 0
+var REQUEST_HOST = ""
+
+var CURRENT_IDX = 0
+var PREVIOUS_IDX = 0
+
+var TOTALCOUNT int64 = 0
 
 var TOKEN_ID = ""
 
@@ -47,7 +49,7 @@ var USER_TYPE = ""
 // DATA --------------- Response Key Words ------------//
 const DATA = "app_data"
 
-var COMPLAINT_DATA = "user_data"
+var COMPLAINT_DATA = "complaint_data"
 
 const PERMISSION_DATA = "permissions"
 const USER_PERMISSION = "user_permission"

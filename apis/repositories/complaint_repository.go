@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
+	"github.com/google/uuid"
 )
 
 type ComplaintRepository interface {
@@ -13,6 +15,9 @@ type ComplaintRepository interface {
 	CreateComplaint(db.CreateComplaintParams) (db.Complaints, error)
 	CreateComplaintInfo(db.CreateComplaintInfoParams) (db.ComplaintInfo, error)
 	FetchAllComplaints(db.FetchAllComplaintsParams) ([]db.ComplaintInfo, error)
+	CountComplaints() (sql.Result, error)
+	FetchComplaintDetailByComplaint(uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error)
+	FetchDeviceImagesByComplaintId(uuid.UUID) ([]db.DeviceImages, error)
 }
 
 type complaint_repository struct {

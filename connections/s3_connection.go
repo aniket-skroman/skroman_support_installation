@@ -1,11 +1,15 @@
 package connections
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-type S3Connection interface{}
+type S3Connection interface {
+	MakeNewSession() (*session.Session, error)
+	GetBucketName() string
+}
 
 type s3_connection struct {
 	AccessKey  string
@@ -23,7 +27,7 @@ func NewS3Connection() S3Connection {
 	}
 }
 
-func (s3_bucket *s3_connection) MakeNewSession() (*s3.S3, error) {
+func (s3_bucket *s3_connection) MakeNewSession() (*session.Session, error) {
 	creds := credentials.NewStaticCredentials(s3_bucket.AccessKey,
 		s3_bucket.SecretKey, "",
 	)
@@ -33,4 +37,13 @@ func (s3_bucket *s3_connection) MakeNewSession() (*s3.S3, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cfg := aws.NewConfig().WithRegion(s3_bucket.Region).WithCredentials(creds)
+	sess, _ := session.NewSession(cfg)
+
+	return sess, nil
+}
+
+func (s3_bucket *s3_connection) GetBucketName() string {
+	return s3_bucket.BucketName
 }

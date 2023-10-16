@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -313,4 +315,54 @@ func TestFetchImageFromS3(t *testing.T) {
 
 		fmt.Println(img_path)
 	}
+}
+
+func TestCountComplaint(t *testing.T) {
+	result, err := testQueries.CountComplaints(context.Background())
+
+	require.NoError(t, err)
+
+	affetcted_rows, err := result.RowsAffected()
+	fmt.Println("Affected rows : ", affetcted_rows)
+	require.NoError(t, err)
+	require.NotZero(t, affetcted_rows)
+}
+
+func TestFetchComplaintByComplaintID(t *testing.T) {
+	complaint_id, err := uuid.Parse("2571e975-4c0d-42fd-bea2-bdf59b38d482")
+	require.NoError(t, err)
+
+	complaints, err := testQueries.FetchComplaintDetailByComplaint(context.Background(), complaint_id)
+	fmt.Printf("%+v\n", complaints)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, complaints)
+
+}
+
+func TestProxyAPI(t *testing.T) {
+	reqUrl := "http://3.7.18.55:3000/skroman/profileapi/profileuser/userId"
+	body := struct {
+		UserId string `json:"userId"`
+	}{UserId: "User_id-iYfdKPhPS"}
+
+	request_body, err := json.Marshal(&body)
+
+	require.NoError(t, err)
+
+	request, err := http.NewRequest(http.MethodPost, reqUrl, bytes.NewReader(request_body))
+	require.NoError(t, err)
+	request.Header.Set("Content-Type", "application/json")
+
+	// req_body, _ := io.ReadAll(request.Body)
+	// fmt.Println("Request data : \n", string(req_body))
+	response, err := http.DefaultClient.Do(request)
+	require.NoError(t, err)
+
+	response_body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	contain_data := string(response_body)
+	fmt.Println("Contain Data : \n", contain_data)
+	require.NotEmpty(t, contain_data)
 }
