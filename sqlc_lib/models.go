@@ -12,17 +12,19 @@ import (
 )
 
 type ComplaintInfo struct {
-	ID               uuid.UUID      `json:"id"`
-	ComplaintID      uuid.UUID      `json:"complaint_id"`
-	DeviceID         string         `json:"device_id"`
-	ProblemStatement string         `json:"problem_statement"`
-	ProblemCategory  sql.NullString `json:"problem_category"`
-	ClientAvailable  time.Time      `json:"client_available"`
-	Status           string         `json:"status"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	DeviceType       sql.NullString `json:"device_type"`
-	DeviceModel      sql.NullString `json:"device_model"`
+	ID                      uuid.UUID      `json:"id"`
+	ComplaintID             uuid.UUID      `json:"complaint_id"`
+	DeviceID                string         `json:"device_id"`
+	ProblemStatement        string         `json:"problem_statement"`
+	ProblemCategory         sql.NullString `json:"problem_category"`
+	ClientAvailable         time.Time      `json:"client_available"`
+	Status                  string         `json:"status"`
+	CreatedAt               time.Time      `json:"created_at"`
+	UpdatedAt               time.Time      `json:"updated_at"`
+	DeviceType              sql.NullString `json:"device_type"`
+	DeviceModel             sql.NullString `json:"device_model"`
+	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
+	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
 }
 
 type Complaints struct {
@@ -34,9 +36,10 @@ type Complaints struct {
 }
 
 type DeviceImages struct {
-	ID              uuid.UUID `json:"id"`
-	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
-	DeviceImage     string    `json:"device_image"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              uuid.UUID      `json:"id"`
+	ComplaintInfoID uuid.UUID      `json:"complaint_info_id"`
+	DeviceImage     string         `json:"device_image"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	FileType        sql.NullString `json:"file_type"`
 }

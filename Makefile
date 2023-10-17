@@ -5,7 +5,7 @@ liveserver:
 	nodemon --exec go run application.go --signal SIGTERM
 
 migratecreate:
-	migrate create -ext sql -dir db/migrations/ -seq change_device_id_type
+	migrate create -ext sql -dir db/migrations/ -seq add_device_image_type
 
 migrateup:
 	migrate -path db/migrations -database "postgresql://postgres:root@localhost:5432/postgres?sslmode=disable" --verbose up
