@@ -39,18 +39,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := apis.NewStore(db)
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	router := gin.New()
+	router := gin.Default()
+	router.Use(cors.New(CORSConfig()))
+	router.Static("static", "static")
+
+	store := apis.NewStore(db)
 
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.Data(http.StatusOK, ContentTypeHTML, []byte("<html>Program file run...</html>"))
 	})
 
-	router.Use(cors.New(CORSConfig()))
-	router.Static("static", "static")
-
 	routers.ComplaintRouter(router, store)
 
-	router.Run(":9000")
+	if err := router.Run(":9000"); err != nil {
+		log.Fatal(err)
+	}
 }
