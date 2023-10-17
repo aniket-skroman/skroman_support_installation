@@ -46,9 +46,10 @@ where status = 'INIT';
 -- name: UploadDeviceImages :one
 insert into device_images(
     complaint_info_id,
-    device_image
+    device_image,
+    file_type
 ) values (
-    $1, $2
+    $1, $2, $3
 ) returning *;
 
 -- name: FetchComplaintDetailByComplaint :one

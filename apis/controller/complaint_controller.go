@@ -148,6 +148,12 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 		return
 	}
 
+	if ctx.Request.ContentLength > 5*1024*1024 {
+		cont.response = utils.BuildFailedResponse("image should be less that 5 MB")
+		ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
+		return
+	}
+
 	tempFile, err := ioutil.TempFile("media", "upload-*.png")
 
 	if err != nil {
@@ -169,7 +175,7 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 	tempFile.Write(fileBytes)
 	defer file.Close()
 	defer tempFile.Close()
-	file_path := path.Base(tempFile.Name())
+	_ = path.Base(tempFile.Name())
 
 	err = cont.comp_serv.UploadDeviceImage(tempFile.Name(), complaint_info_id)
 	if err != nil {
@@ -178,7 +184,7 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 		return
 	}
 
-	cont.response = utils.BuildSuccessResponse("File upload successfully", utils.COMPLAINT_DATA, file_path)
+	cont.response = utils.BuildSuccessResponse("File upload successfully", utils.COMPLAINT_DATA, utils.EmptyObj{})
 	ctx.JSON(http.StatusOK, cont.response)
 }
 

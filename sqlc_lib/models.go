@@ -36,9 +36,10 @@ type Complaints struct {
 }
 
 type DeviceImages struct {
-	ID              uuid.UUID `json:"id"`
-	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
-	DeviceImage     string    `json:"device_image"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              uuid.UUID      `json:"id"`
+	ComplaintInfoID uuid.UUID      `json:"complaint_info_id"`
+	DeviceImage     string         `json:"device_image"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	FileType        sql.NullString `json:"file_type"`
 }

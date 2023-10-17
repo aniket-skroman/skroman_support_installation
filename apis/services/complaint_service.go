@@ -248,6 +248,7 @@ func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info
 	args := db.UploadDeviceImagesParams{
 		DeviceImage:     path,
 		ComplaintInfoID: complaint_obj_id,
+		FileType:        sql.NullString{String: "image/png", Valid: true},
 	}
 
 	_, err = ser.complaint_repo.UploadDeviceImage(args)

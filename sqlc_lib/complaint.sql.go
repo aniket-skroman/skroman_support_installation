@@ -19,7 +19,7 @@ insert into device_images (
     device_image
 ) values (
     $1, $2
-) returning id, complaint_info_id, device_image, created_at, updated_at
+) returning id, complaint_info_id, device_image, created_at, updated_at, file_type
 `
 
 type AddDeviceImagesParams struct {
@@ -36,6 +36,7 @@ func (q *Queries) AddDeviceImages(ctx context.Context, arg AddDeviceImagesParams
 		&i.DeviceImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FileType,
 	)
 	return i, err
 }
@@ -240,7 +241,7 @@ func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.U
 }
 
 const fetchDeviceImagesByComplaintId = `-- name: FetchDeviceImagesByComplaintId :many
-select id, complaint_info_id, device_image, created_at, updated_at from device_images
+select id, complaint_info_id, device_image, created_at, updated_at, file_type from device_images
 where complaint_info_id = $1
 `
 
@@ -259,6 +260,7 @@ func (q *Queries) FetchDeviceImagesByComplaintId(ctx context.Context, complaintI
 			&i.DeviceImage,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.FileType,
 		); err != nil {
 			return nil, err
 		}
@@ -276,19 +278,21 @@ func (q *Queries) FetchDeviceImagesByComplaintId(ctx context.Context, complaintI
 const uploadDeviceImages = `-- name: UploadDeviceImages :one
 insert into device_images(
     complaint_info_id,
-    device_image
+    device_image,
+    file_type
 ) values (
-    $1, $2
-) returning id, complaint_info_id, device_image, created_at, updated_at
+    $1, $2, $3
+) returning id, complaint_info_id, device_image, created_at, updated_at, file_type
 `
 
 type UploadDeviceImagesParams struct {
-	ComplaintInfoID uuid.UUID `json:"complaint_info_id"`
-	DeviceImage     string    `json:"device_image"`
+	ComplaintInfoID uuid.UUID      `json:"complaint_info_id"`
+	DeviceImage     string         `json:"device_image"`
+	FileType        sql.NullString `json:"file_type"`
 }
 
 func (q *Queries) UploadDeviceImages(ctx context.Context, arg UploadDeviceImagesParams) (DeviceImages, error) {
-	row := q.db.QueryRowContext(ctx, uploadDeviceImages, arg.ComplaintInfoID, arg.DeviceImage)
+	row := q.db.QueryRowContext(ctx, uploadDeviceImages, arg.ComplaintInfoID, arg.DeviceImage, arg.FileType)
 	var i DeviceImages
 	err := row.Scan(
 		&i.ID,
@@ -296,6 +300,7 @@ func (q *Queries) UploadDeviceImages(ctx context.Context, arg UploadDeviceImages
 		&i.DeviceImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FileType,
 	)
 	return i, err
 }
