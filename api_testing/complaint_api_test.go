@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"testing"
 
@@ -13,14 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var debug_logger *log.Logger
 var Token string
-
-func init() {
-
-	debug_logger = log.New(os.Stdout, "DEBUG : ", log.Flags())
-	Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNmEwZGFhYjItZDY1MS00MmIxLThjOWYtOWY5ODcxMTE4YzdlIiwidXNlcl90eXBlIjoiQURNSU4iLCJjcmVhdGVkX2F0IjoiMjAyMy0xMC0xN1QwNToxMzo0OC45NDI4NDQwNzFaIiwiZXhwIjozMDAwMDAwMDAwMDAsImlhdCI6MTY5NzUxOTAyOCwiaXNzIjoieWRobndiIn0.TCXCBCz9xRig5KKT4waRDr1NV-6Qg5ETE-6Irln-0M0"
-}
 
 func TestFetchComplaints(t *testing.T) {
 	args := []struct {
@@ -74,24 +65,9 @@ func TestFetchComplaints(t *testing.T) {
 
 			require.NoError(t, err)
 			request.Header.Set("Authorization", arg.AccessToken)
-			// q := request.URL.Query()
-			// q.Add("page_id", strconv.Itoa(int(arg.Params.Offset)))
-			// q.Add("page_size", strconv.Itoa(int(arg.Params.Limit)))
-
-			// request.URL.RawQuery = q.Encode()
 
 			response, err := http.DefaultClient.Do(request)
 			require.NoError(t, err)
-
-			response_body, err := io.ReadAll(response.Body)
-			require.NoError(t, err)
-
-			debug_logger.Println("REQUEST : ", request)
-			debug_logger.Println("RESPONSE : ", string(response_body))
-			debug_logger.Println("RESPONCE STATUS CODE : ", response.StatusCode)
-			debug_logger.Println("EXPECTED CODE : ", arg.ExpectedStatus)
-			debug_logger.Println()
-
 			require.Equal(t, arg.ExpectedStatus, response.StatusCode)
 		})
 	}
