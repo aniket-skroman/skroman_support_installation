@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"reflect"
@@ -27,6 +28,7 @@ type ComplaintService interface {
 	FetchAllComplaints(dto.PaginationRequestParams) ([]dto.ComplaintInfoDTO, error)
 	FetchComplaintDetailByComplaint(uuid.UUID) (dto.ComplaintInfoByComplaintDTO, error)
 	UploadDeviceImage(file_path string, complaint_info_id string) error
+	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader, complaint_info_id string) error
 }
 
 type complaint_service struct {
@@ -214,8 +216,9 @@ func (ser *complaint_service) FetchDeviceImagesByComplaintId(complaint_info_id s
 	device_images := make([]dto.ComplaintDeviceImagesDTO, len(result))
 	for i, device := range result {
 		device_images[i] = dto.ComplaintDeviceImagesDTO{
-			DeviceImage: "http://" + utils.REQUEST_HOST + "/api/device-image/" + device.DeviceImage,
-			CreatedAt:   device.CreatedAt,
+			File:      "http://" + utils.REQUEST_HOST + "/api/device-image/" + device.DeviceImage,
+			CreatedAt: device.CreatedAt,
+			FileType:  device.FileType.String,
 		}
 	}
 
@@ -255,6 +258,35 @@ func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info
 
 	err = helper.Handle_db_err(err)
 
+	return err
+}
+
+func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader, complaint_info_id string) error {
+
+	complaint_obj_id, err := uuid.Parse(complaint_info_id)
+
+	if err != nil {
+		return err
+	}
+
+	// upload a image in s3 bucket first
+	s3_connection := connections.NewS3Connection()
+	path, err := s3_connection.UploadDeviceVideo(file, handler)
+	if err != nil {
+		return err
+	}
+
+	// make args to store a image ref in db
+	args := db.UploadDeviceImagesParams{
+		DeviceImage:     path,
+		ComplaintInfoID: complaint_obj_id,
+		FileType:        sql.NullString{String: "video/mp4", Valid: true},
+	}
+
+	_, err = ser.complaint_repo.UploadDeviceImage(args)
+
+	err = helper.Handle_db_err(err)
+	fmt.Println("File Path from service : ", path, complaint_obj_id)
 	return err
 }
 
@@ -334,7 +366,7 @@ func (ser *complaint_service) fetch_user_info(user_id string) (string, error) {
 	// generate auth_token for user id
 	token := ser.jwt_service.GenerateToken(user_id, "EMP")
 
-	requrl := "http://localhost:8080/api/fetch-user"
+	requrl := "http://15.207.19.172:8080/api/fetch-user"
 
 	request, err := http.NewRequest(http.MethodGet, requrl, nil)
 

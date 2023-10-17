@@ -2,6 +2,8 @@ package connections
 
 import (
 	"bytes"
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -9,12 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type S3Connection interface {
 	MakeNewSession() (*session.Session, error)
 	GetBucketName() string
 	UploadDeviceImage(file_path string) (*s3.PutObjectOutput, string, error)
+	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader) (string, error)
 }
 
 type s3_connection struct {
@@ -85,4 +89,30 @@ func (s3_bucket *s3_connection) UploadDeviceImage(file_path string) (*s3.PutObje
 	}
 	result, err := svc.PutObject(params)
 	return result, path, err
+}
+
+func (s3_bucket *s3_connection) UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader) (string, error) {
+	defer file.Close()
+
+	file_name := handler.Filename
+
+	sess, err := s3_bucket.MakeNewSession()
+
+	if err != nil {
+		return "", err
+	}
+
+	uploader := s3manager.NewUploader(sess)
+
+	file_name = "video/" + file_name
+
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s3_bucket.GetBucketName()), // Bucket to be used
+		Key:    aws.String(file_name),                 // Name of the file to be saved
+		Body:   file,                                  // File
+	})
+
+	fmt.Println("Video file upload result : ", result)
+
+	return file_name, err
 }

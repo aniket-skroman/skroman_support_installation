@@ -23,6 +23,7 @@ type ComplaintController interface {
 	FetchDeviceImageURL(*gin.Context)
 	FetchComplaintDetailByComplaint(*gin.Context)
 	UploadDeviceImage(*gin.Context)
+	UploadDeviceVideo(*gin.Context)
 }
 
 type complaint_controller struct {
@@ -120,14 +121,16 @@ func (cont *complaint_controller) FetchComplaintDetailByComplaint(ctx *gin.Conte
 }
 
 func (cont *complaint_controller) FetchDeviceImageURL(ctx *gin.Context) {
-	var req dto.ImageRequestDTO
+
+	var req dto.VideoRequestDTO
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
-	respo := generateSignedS3URL(req.ImagePath)
+
+	respo := generateSignedS3URL(req.FilePath, req.Directory)
 	defer respo.Body.Close()
 	ctx.DataFromReader(http.StatusOK, *respo.ContentLength, *respo.ContentType, respo.Body, nil)
 }
@@ -188,7 +191,41 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cont.response)
 }
 
-func generateSignedS3URL(img string) *s3.GetObjectOutput {
+func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
+	file, handler, err := ctx.Request.FormFile("device_video")
+	complaint_info_id := ctx.PostForm("complaint_info_id")
+
+	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	if complaint_info_id == "" {
+		cont.response = utils.BuildFailedResponse("invalid comaplaint id")
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	if ctx.Request.ContentLength > 5*1024*1024 {
+		cont.response = utils.BuildFailedResponse("image should be less that 5 MB")
+		ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
+		return
+	}
+
+	err = cont.comp_serv.UploadDeviceVideo(file, handler, complaint_info_id)
+
+	if err != nil {
+		response := utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse("Video has been upload successfully", utils.COMPLAINT_DATA, handler.Filename)
+	ctx.JSON(http.StatusOK, cont.response)
+}
+
+func generateSignedS3URL(img string, folder_name string) *s3.GetObjectOutput {
 	s3_connection := connections.NewS3Connection()
 	sess, err := s3_connection.MakeNewSession()
 	if err != nil {
@@ -196,7 +233,7 @@ func generateSignedS3URL(img string) *s3.GetObjectOutput {
 	}
 
 	bucket := s3_connection.GetBucketName()
-	item := "/media/" + img
+	item := "/" + folder_name + "/" + img
 	svc := s3.New(sess)
 
 	out, err := svc.GetObject(&s3.GetObjectInput{

@@ -34,9 +34,15 @@ type ImageRequestDTO struct {
 	ImagePath string `uri:"image_path"`
 }
 
+type VideoRequestDTO struct {
+	Directory string `uri:"directory"`
+	FilePath  string `uri:"image_path"`
+}
+
 type ComplaintDeviceImagesDTO struct {
-	DeviceImage string    `json:"device_image"`
-	CreatedAt   time.Time `json:"uploaded_at"`
+	File      string    `json:"device_image"`
+	CreatedAt time.Time `json:"uploaded_at"`
+	FileType  string    `json:"file_type"`
 }
 
 type ComplaintInfoByComplaintDTO struct {

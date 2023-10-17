@@ -2,26 +2,13 @@ package proxycalls
 
 import (
 	"bytes"
-	"log"
 	"net/http"
-	"os"
 )
 
 var (
 	BASE_URL     = "http://3.7.18.55:3000/skroman/"
 	USER_SERVICE = "http://localhost:8080/api/"
-	logger       *log.Logger
 )
-
-func init() {
-	file, err := os.Open("./api_testing/app.log")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	logger = log.New(file, "DEBUG : ", log.Flags())
-}
 
 type ProxyCalls struct {
 	ReqEndpoint   string
