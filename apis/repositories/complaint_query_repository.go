@@ -48,3 +48,10 @@ func (repo *complaint_repository) FetchDeviceImagesByComplaintId(complaint_info_
 
 	return repo.db.Queries.FetchDeviceImagesByComplaintId(ctx, complaint_info_id)
 }
+
+func (repo *complaint_repository) UploadDeviceImage(args db.UploadDeviceImagesParams) (db.DeviceImages, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.UploadDeviceImages(ctx, args)
+}

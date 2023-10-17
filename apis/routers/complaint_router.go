@@ -13,7 +13,7 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	var (
 		complaint_repo = repositories.NewComplaintRepository(store)
 		jwt_service    = services.NewJWTService()
-		complaint_serv = services.NewComplaintService(complaint_repo)
+		complaint_serv = services.NewComplaintService(complaint_repo, jwt_service)
 		complaint_cont = controller.NewComplaintController(complaint_serv)
 	)
 
@@ -22,10 +22,11 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 		complaint.POST("/create-complaint", complaint_cont.CreateComplaint)
 		complaint.GET("/fetch-complaints/:page_id/:page_size", complaint_cont.FetchAllComplaints)
 		complaint.GET("/fetch-complaint", complaint_cont.FetchComplaintDetailByComplaint)
+		complaint.POST("/upload-device-image", complaint_cont.UploadDeviceImage)
 	}
 
-	dummy_img := router.Group("/api")
+	device_img := router.Group("/api")
 	{
-		dummy_img.GET("/device-image/:directory/:image_path", complaint_cont.FetchDummyURL)
+		device_img.GET("/device-image/:directory/:image_path", complaint_cont.FetchDeviceImageURL)
 	}
 }

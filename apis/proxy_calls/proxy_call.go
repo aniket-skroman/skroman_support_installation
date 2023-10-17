@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	BASE_URL = "http://3.7.18.55:3000/skroman/"
-	logger   *log.Logger
+	BASE_URL     = "http://3.7.18.55:3000/skroman/"
+	USER_SERVICE = "http://localhost:8080/api/"
+	logger       *log.Logger
 )
 
 func init() {

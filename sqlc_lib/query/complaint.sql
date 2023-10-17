@@ -15,9 +15,11 @@ insert into complaint_info (
     problem_statement,
     problem_category,
     client_available,
+    client_available_date,
+    client_available_time_slot,
     status
 ) values (
-    $1,$2,$3,$4,$5,$6,$7,$8
+    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
 ) returning *;
 
 -- name: AddDeviceImages :one

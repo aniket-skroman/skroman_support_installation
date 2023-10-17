@@ -18,6 +18,7 @@ type ComplaintRepository interface {
 	CountComplaints() (sql.Result, error)
 	FetchComplaintDetailByComplaint(uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error)
 	FetchDeviceImagesByComplaintId(uuid.UUID) ([]db.DeviceImages, error)
+	UploadDeviceImage(db.UploadDeviceImagesParams) (db.DeviceImages, error)
 }
 
 type complaint_repository struct {

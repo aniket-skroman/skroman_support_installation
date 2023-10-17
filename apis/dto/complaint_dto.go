@@ -8,14 +8,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type ClientTimeSlots struct {
+	From string `json:"from" binding:"required"`
+	To   string `json:"to" binding:"required"`
+}
+
 type CreateComplaintRequestDTO struct {
-	ClientID         string `json:"client_id" binding:"required"`
-	DeviceID         string `json:"device_id" binding:"required"`
-	DeviceType       string `json:"device_type" binding:"required"`
-	DeviceModel      string `json:"device_model" binding:"required"`
-	ProblemStatement string `json:"problem_statement" binding:"required"`
-	ProblemCategory  string `json:"problem_category" binding:"required"`
-	ClientAvailable  string `json:"client_available" binding:"required"`
+	ClientID            string          `json:"client_id" binding:"required"`
+	DeviceID            string          `json:"device_id" binding:"required"`
+	DeviceType          string          `json:"device_type" binding:"required"`
+	DeviceModel         string          `json:"device_model" binding:"required"`
+	ProblemStatement    string          `json:"problem_statement" binding:"required"`
+	ProblemCategory     string          `json:"problem_category" binding:"required"`
+	ClientAvailable     string          `json:"client_available" binding:"required"`
+	ClientAvailableDate string          `json:"client_available_date" binding:"required"`
+	ClientTimeSlots     ClientTimeSlots `json:"available_time_slots" binding:"required"`
 }
 
 type PaginationRequestParams struct {
@@ -38,7 +45,7 @@ type ComplaintInfoByComplaintDTO struct {
 }
 
 type ComplaintFullDetailsDTO struct {
-	CreatedBy         uuid.UUID                  `json:"created_by"`
+	CreatedBy         string                     `json:"created_by"`
 	Client            string                     `json:"client"`
 	DeviceID          string                     `json:"device_id"`
 	ProblemStatement  string                     `json:"problem_statement"`

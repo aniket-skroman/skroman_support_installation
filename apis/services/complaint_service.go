@@ -4,15 +4,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"sync"
 	"time"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
+	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	proxycalls "github.com/aniket-skroman/skroman_support_installation/apis/proxy_calls"
 	"github.com/aniket-skroman/skroman_support_installation/apis/repositories"
+	"github.com/aniket-skroman/skroman_support_installation/connections"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/google/uuid"
@@ -22,15 +26,18 @@ type ComplaintService interface {
 	CreateComplaint(dto.CreateComplaintRequestDTO) (interface{}, error)
 	FetchAllComplaints(dto.PaginationRequestParams) ([]dto.ComplaintInfoDTO, error)
 	FetchComplaintDetailByComplaint(uuid.UUID) (dto.ComplaintInfoByComplaintDTO, error)
+	UploadDeviceImage(file_path string, complaint_info_id string) error
 }
 
 type complaint_service struct {
 	complaint_repo repositories.ComplaintRepository
+	jwt_service    JWTService
 }
 
-func NewComplaintService(repo repositories.ComplaintRepository) ComplaintService {
+func NewComplaintService(repo repositories.ComplaintRepository, serv JWTService) ComplaintService {
 	return &complaint_service{
 		complaint_repo: repo,
+		jwt_service:    serv,
 	}
 }
 
@@ -48,6 +55,8 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 
 	// create a complaint info
 	c_time, err := time.Parse("2006-01-02 15:04:05", req.ClientAvailable)
+	avalibale_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)
+	time_slots := fmt.Sprintf("%s %s", req.ClientTimeSlots.From, req.ClientTimeSlots.To)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +71,11 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 		ProblemCategory:  sql.NullString{String: req.ProblemCategory, Valid: true},
 		ClientAvailable:  c_time,
 		Status:           "INIT",
+		ClientAvailableDate: sql.NullTime{
+			Time:  avalibale_date,
+			Valid: true,
+		},
+		ClientAvailableTimeSlot: sql.NullString{String: time_slots, Valid: true},
 	}
 
 	complaint_info, err := ser.complaint_repo.CreateComplaintInfo(info_args)
@@ -134,7 +148,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 	result := dto.ComplaintInfoByComplaintDTO{}
 
 	// fetch client info by proxy call
@@ -160,8 +174,13 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 		}
 	}(complaint_info.ComplaintInfoID.String())
 
+	go func() {
+		defer wg.Done()
+		user_name, _ := ser.fetch_user_info(complaint_info.CreatedBy.String())
+		result.ComplaintInfo.CreatedBy = user_name
+	}()
+
 	result.ComplaintInfo = dto.ComplaintFullDetailsDTO{
-		CreatedBy:         complaint_info.CreatedBy,
 		Client:            complaint_info.Client,
 		DeviceID:          complaint_info.DeviceID,
 		DeviceModel:       complaint_info.DeviceModel.String,
@@ -203,6 +222,45 @@ func (ser *complaint_service) FetchDeviceImagesByComplaintId(complaint_info_id s
 	return device_images, nil
 }
 
+func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info_id string) error {
+
+	complaint_obj_id, err := uuid.Parse(complaint_info_id)
+
+	if err != nil {
+		return err
+	}
+
+	// upload a image in s3 bucket first
+	s3_connection := connections.NewS3Connection()
+	_, path, err := s3_connection.UploadDeviceImage(file_path)
+	if err != nil {
+		return err
+	}
+
+	if path == "" {
+		return errors.New("failed to image process")
+	}
+
+	// remove the file from local storege
+	ser.remove_local_files(file_path)
+
+	// make args to store a image ref in db
+	args := db.UploadDeviceImagesParams{
+		DeviceImage:     path,
+		ComplaintInfoID: complaint_obj_id,
+	}
+
+	_, err = ser.complaint_repo.UploadDeviceImage(args)
+
+	err = helper.Handle_db_err(err)
+
+	return err
+}
+
+func (ser *complaint_service) remove_local_files(file_path string) {
+	_ = os.Remove(file_path)
+}
+
 func (ser *complaint_service) count_complaints() (int64, error) {
 	result, err := ser.complaint_repo.CountComplaints()
 
@@ -219,6 +277,7 @@ func (ser *complaint_service) count_complaints() (int64, error) {
 	return affected_rows, nil
 }
 
+// from another server
 func (ser *complaint_service) fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error) {
 	proxy_call := proxycalls.ProxyCalls{}
 	proxy_call.ReqEndpoint = "profileapi/profileuser/userId"
@@ -239,6 +298,12 @@ func (ser *complaint_service) fetch_client_info(client_id string) (proxycalls.Cl
 	proxy_call.RequestBody = request_body
 
 	response, err := proxy_call.MakeRequestWithBody()
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			return
+		}
+	}()
 
 	if err != nil {
 		return proxycalls.ClientByIdResponse{}, err
@@ -261,4 +326,64 @@ func (ser *complaint_service) fetch_client_info(client_id string) (proxycalls.Cl
 	}
 
 	return client_info, nil
+}
+
+// fetch user data by user id from user-service
+func (ser *complaint_service) fetch_user_info(user_id string) (string, error) {
+	// generate auth_token for user id
+	token := ser.jwt_service.GenerateToken(user_id, "EMP")
+
+	requrl := "http://localhost:8080/api/fetch-user"
+
+	request, err := http.NewRequest(http.MethodGet, requrl, nil)
+
+	if err != nil {
+		return "", err
+	}
+
+	request.Header.Set("Authorization", token)
+
+	response, err := http.DefaultClient.Do(request)
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			return
+		}
+	}()
+
+	if err != nil {
+		return "NOT AVAILABEL", nil
+	}
+
+	if response.StatusCode == http.StatusOK {
+		response_body, err := io.ReadAll(response.Body)
+
+		if err != nil {
+			return "NOT AVAILABEL", nil
+		}
+
+		user_data := struct {
+			Error    string `json:"error"`
+			Message  string `json:"message"`
+			Status   bool   `json:"status"`
+			UserData struct {
+				ID        string    `json:"id"`
+				FullName  string    `json:"full_name"`
+				Email     string    `json:"email"`
+				Contact   string    `json:"contact"`
+				UserType  string    `json:"user_type"`
+				CreatedAt time.Time `json:"created_at"`
+				UpdatedAt time.Time `json:"updated_at"`
+			} `json:"user_data"`
+		}{}
+
+		json.Unmarshal(response_body, &user_data)
+		if user_data.UserData.FullName != "" {
+			return user_data.UserData.FullName, nil
+		}
+
+		return "NOT AVAILABEL", nil
+	}
+
+	return "NOT AVAILABEL", nil
 }
