@@ -108,18 +108,15 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 		count, err := ser.count_complaints()
 
 		if err != nil {
-			utils.SetPaginationData(int(req.PageID), 0)
-			return
+			helper.SetPaginationData(int(req.PageID), 0)
+		} else {
+			helper.SetPaginationData(int(req.PageID), count)
 		}
-
-		utils.SetPaginationData(int(req.PageID), count)
-
 	}()
 
 	complaints, err := ser.complaint_repo.FetchAllComplaints(args)
@@ -133,13 +130,14 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 	}
 
 	complaint_info := new(dto.ComplaintInfoDTO).SetComplaintInfoData(complaints...)
+	wg.Wait()
 
 	if _, ok := complaint_info.([]dto.ComplaintInfoDTO); ok {
 		return complaint_info.([]dto.ComplaintInfoDTO), nil
 	}
 
 	s_complaint := complaint_info.(dto.ComplaintInfoDTO)
-	wg.Wait()
+
 	return []dto.ComplaintInfoDTO{s_complaint}, nil
 }
 
