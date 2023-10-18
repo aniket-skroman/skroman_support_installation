@@ -1,11 +1,12 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"path"
-	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
@@ -24,6 +25,8 @@ type ComplaintController interface {
 	FetchComplaintDetailByComplaint(*gin.Context)
 	UploadDeviceImage(*gin.Context)
 	UploadDeviceVideo(*gin.Context)
+	UpdateComplaintInfo(ctx *gin.Context)
+	DeleteDeviceFiles(ctx *gin.Context)
 }
 
 type complaint_controller struct {
@@ -42,46 +45,47 @@ func (cont *complaint_controller) CreateComplaint(ctx *gin.Context) {
 	var req dto.CreateComplaintRequestDTO
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response := utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusBadRequest, response)
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
 
 	complaint_info, err := cont.comp_serv.CreateComplaint(req)
 	if err != nil {
-		response := utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusInternalServerError, response)
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
 
-	response := utils.BuildSuccessResponse(utils.COMPLAINT_CREATED, utils.COMPLAINT_DATA, complaint_info)
-	ctx.JSON(http.StatusCreated, response)
+	cont.response = utils.BuildSuccessResponse(utils.COMPLAINT_CREATED, utils.COMPLAINT_DATA, complaint_info)
+	ctx.JSON(http.StatusCreated, cont.response)
 }
 
 func (cont *complaint_controller) FetchAllComplaints(ctx *gin.Context) {
 	var req dto.PaginationRequestParams
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		response := utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusBadRequest, response)
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
 
 	complaint_info, err := cont.comp_serv.FetchAllComplaints(req)
 
 	if err != nil {
-		response := utils.BuildFailedResponse(err.Error())
-		if strings.Contains(err.Error(), "not found") {
-			ctx.JSON(http.StatusNotFound, response)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("complaints not found")
+			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
-
-		ctx.JSON(http.StatusInternalServerError, response)
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
 
-	response := utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
-	ctx.JSON(http.StatusOK, response)
+	cont.response = utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
+	ctx.JSON(http.StatusOK, cont.response)
 }
 
 func (cont *complaint_controller) FetchComplaintDetailByComplaint(ctx *gin.Context) {
@@ -106,8 +110,8 @@ func (cont *complaint_controller) FetchComplaintDetailByComplaint(ctx *gin.Conte
 	complaint, err := cont.comp_serv.FetchComplaintDetailByComplaint(obj_id)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
-			cont.response = utils.BuildFailedResponse("conplaint not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("conplaint not founds")
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
@@ -188,7 +192,7 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildSuccessResponse("File upload successfully", utils.COMPLAINT_DATA, utils.EmptyObj{})
-	ctx.JSON(http.StatusOK, cont.response)
+	ctx.JSON(http.StatusCreated, cont.response)
 }
 
 func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
@@ -222,6 +226,27 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildSuccessResponse("Video has been upload successfully", utils.COMPLAINT_DATA, handler.Filename)
+	ctx.JSON(http.StatusCreated, cont.response)
+}
+
+func (cont *complaint_controller) UpdateComplaintInfo(ctx *gin.Context) {
+	var req dto.UpdateComplaintRequestDTO
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	result, err := cont.comp_serv.UpdateComplaintInfo(req)
+
+	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse(utils.UPDATE_SUCCESS, utils.COMPLAINT_DATA, result)
 	ctx.JSON(http.StatusOK, cont.response)
 }
 
@@ -244,4 +269,25 @@ func generateSignedS3URL(img string, folder_name string) *s3.GetObjectOutput {
 		log.Fatal(err)
 	}
 	return out
+}
+
+func (cont *complaint_controller) DeleteDeviceFiles(ctx *gin.Context) {
+	device_file_id := ctx.Param("file_id")
+
+	err := cont.comp_serv.DeleteDeviceFiles(device_file_id)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("device file not found")
+			ctx.JSON(http.StatusNotFound, cont.response)
+			return
+
+		}
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, device_file_id)
+	ctx.JSON(http.StatusOK, cont.response)
 }

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,8 @@ type ComplaintService interface {
 	FetchComplaintDetailByComplaint(uuid.UUID) (dto.ComplaintInfoByComplaintDTO, error)
 	UploadDeviceImage(file_path string, complaint_info_id string) error
 	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader, complaint_info_id string) error
+	UpdateComplaintInfo(req dto.UpdateComplaintRequestDTO) (dto.ComplaintInfoDTO, error)
+	DeleteDeviceFiles(file_id string) error
 }
 
 type complaint_service struct {
@@ -125,7 +128,7 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 	}
 
 	if len(complaints) == 0 {
-		return nil, errors.New("complaint not found")
+		return nil, sql.ErrNoRows
 	}
 
 	complaint_info := new(dto.ComplaintInfoDTO).SetComplaintInfoData(complaints...)
@@ -166,11 +169,13 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	// fetch all device images and videos for complaint
 	go func(complaint_info_id string) {
 		defer wg.Done()
-		device_images, err := ser.FetchDeviceImagesByComplaintId(complaint_info.ComplaintInfoID.String())
+		device_images, device_videos, err := ser.FetchDeviceImagesByComplaintId(complaint_info.ComplaintInfoID.String())
 		if err != nil {
-			result.ComplaintInfo.DeviceInfo = []dto.ComplaintDeviceImagesDTO{}
+			result.ComplaintInfo.DeviceImages = []dto.ComplaintDeviceImagesDTO{}
+			result.ComplaintInfo.DeviceVideos = []dto.ComplaintDeviceImagesDTO{}
 		} else {
-			result.ComplaintInfo.DeviceInfo = device_images
+			result.ComplaintInfo.DeviceImages = device_images
+			result.ComplaintInfo.DeviceVideos = device_videos
 		}
 	}(complaint_info.ComplaintInfoID.String())
 
@@ -180,17 +185,21 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 		result.ComplaintInfo.CreatedBy = user_name
 	}()
 
+	available_date := strings.ReplaceAll(complaint_info.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
 	result.ComplaintInfo = dto.ComplaintFullDetailsDTO{
-		Client:            complaint_info.Client,
-		DeviceID:          complaint_info.DeviceID,
-		DeviceModel:       complaint_info.DeviceModel.String,
-		DeviceType:        complaint_info.DeviceType.String,
-		ProblemStatement:  complaint_info.ProblemStatement,
-		ProblemCategory:   complaint_info.ProblemCategory.String,
-		ComplaintStatus:   complaint_info.ComplaintStatus,
-		ComplaintRaisedAt: complaint_info.ComplaintRaisedAt,
-		LastModifiedAt:    complaint_info.LastModifiedAt,
-		ClientAvailable:   complaint_info.ClientAvailable,
+		Id:                  complaint_info.ComplaintInfoID,
+		Client:              complaint_info.Client,
+		DeviceID:            complaint_info.DeviceID,
+		DeviceModel:         complaint_info.DeviceModel.String,
+		DeviceType:          complaint_info.DeviceType.String,
+		ProblemStatement:    complaint_info.ProblemStatement,
+		ProblemCategory:     complaint_info.ProblemCategory.String,
+		ComplaintStatus:     complaint_info.ComplaintStatus,
+		ComplaintRaisedAt:   complaint_info.ComplaintRaisedAt,
+		LastModifiedAt:      complaint_info.LastModifiedAt,
+		ClientAvailableDate: available_date,
+		ClientTimeSlots:     complaint_info.ClientAvailableTimeSlot.String,
 	}
 
 	wg.Wait()
@@ -198,29 +207,37 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	return result, nil
 }
 
-func (ser *complaint_service) FetchDeviceImagesByComplaintId(complaint_info_id string) ([]dto.ComplaintDeviceImagesDTO, error) {
+func (ser *complaint_service) FetchDeviceImagesByComplaintId(complaint_info_id string) ([]dto.ComplaintDeviceImagesDTO, []dto.ComplaintDeviceImagesDTO, error) {
 	obj_id, _ := uuid.Parse(complaint_info_id)
 
 	result, err := ser.complaint_repo.FetchDeviceImagesByComplaintId(obj_id)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(result) == 0 {
-		return nil, errors.New("device image/video not found")
+		return nil, nil, errors.New("device image/video not found")
 	}
 
-	device_images := make([]dto.ComplaintDeviceImagesDTO, len(result))
-	for i, device := range result {
-		device_images[i] = dto.ComplaintDeviceImagesDTO{
-			File:      "http://" + utils.REQUEST_HOST + "/api/device-image/" + device.DeviceImage,
+	device_images := []dto.ComplaintDeviceImagesDTO{}
+	device_video := []dto.ComplaintDeviceImagesDTO{}
+	for _, device := range result {
+		temp := dto.ComplaintDeviceImagesDTO{
+			ID:        device.ID,
+			File:      "http://" + utils.REQUEST_HOST + "/api/device-file/" + device.DeviceImage,
 			CreatedAt: device.CreatedAt,
 			FileType:  device.FileType.String,
 		}
+		if device.FileType.String == "image/png" {
+			device_images = append(device_images, temp)
+		} else {
+			device_video = append(device_video, temp)
+		}
+
 	}
 
-	return device_images, nil
+	return device_images, device_video, nil
 }
 
 func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info_id string) error {
@@ -285,6 +302,89 @@ func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *mu
 
 	err = helper.Handle_db_err(err)
 	fmt.Println("File Path from service : ", path, complaint_obj_id)
+	return err
+}
+
+func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequestDTO) (dto.ComplaintInfoDTO, error) {
+	complaint_obj_id, err := uuid.Parse(req.ComplaintInfoId)
+
+	if err != nil {
+		return dto.ComplaintInfoDTO{}, err
+	}
+
+	available_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)
+
+	if err != nil {
+		return dto.ComplaintInfoDTO{}, err
+	}
+
+	args := db.UpdateComplaintInfoParams{
+		ID:                      complaint_obj_id,
+		DeviceID:                req.DeviceID,
+		DeviceModel:             sql.NullString{String: req.DeviceModel, Valid: true},
+		DeviceType:              sql.NullString{String: req.DeviceType, Valid: true},
+		ProblemStatement:        req.ProblemStatement,
+		ProblemCategory:         sql.NullString{String: req.ProblemCategory, Valid: true},
+		ClientAvailableDate:     sql.NullTime{Time: available_date, Valid: true},
+		ClientAvailableTimeSlot: sql.NullString{String: req.ClientTimeSlots.From + "-" + req.ClientTimeSlots.To, Valid: true},
+	}
+
+	result, err := ser.complaint_repo.UpdateComplaintInfo(args)
+	err = helper.Handle_db_err(err)
+
+	if err != nil {
+		return dto.ComplaintInfoDTO{}, err
+	}
+	return dto.ComplaintInfoDTO{
+		ID:                  result.ID,
+		ComplaintID:         result.ComplaintID,
+		DeviceID:            result.DeviceID,
+		ProblemStatement:    result.ProblemStatement,
+		ProblemCategory:     result.ProblemCategory.String,
+		DeviceType:          result.DeviceType.String,
+		DeviceModel:         result.DeviceModel.String,
+		ClientAvailableDate: available_date.String(),
+		Status:              result.Status,
+		ClientTimeSlots:     result.ClientAvailableTimeSlot.String,
+		CreatedAt:           result.CreatedAt,
+		UpdatedAt:           result.UpdatedAt,
+	}, nil
+}
+
+// delete a device files
+func (ser *complaint_service) DeleteDeviceFiles(file_id string) error {
+	file_obj_id, err := uuid.Parse(file_id)
+
+	if err != nil {
+		return err
+	}
+
+	// fetch device file details first
+	device_file, err := ser.complaint_repo.FetchDeviceFileById(file_obj_id)
+
+	if err != nil {
+		return err
+	}
+
+	// then delete a refrance from db
+	result, err := ser.complaint_repo.DeleteDeviceFiles(file_obj_id)
+
+	if err != nil {
+		return err
+	}
+
+	affected_rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected_rows == 0 {
+		return errors.New("failed to delete device file")
+	}
+
+	// delete file from storage
+	s3_connection := connections.NewS3Connection()
+	err = s3_connection.DeleteFiles(device_file.DeviceImage)
 	return err
 }
 

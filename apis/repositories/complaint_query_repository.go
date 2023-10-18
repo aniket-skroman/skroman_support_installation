@@ -55,3 +55,25 @@ func (repo *complaint_repository) UploadDeviceImage(args db.UploadDeviceImagesPa
 
 	return repo.db.Queries.UploadDeviceImages(ctx, args)
 }
+
+func (repo *complaint_repository) UpdateComplaintInfo(args db.UpdateComplaintInfoParams) (db.ComplaintInfo, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.UpdateComplaintInfo(ctx, args)
+}
+
+func (repo *complaint_repository) FetchDeviceFileById(file_id uuid.UUID) (db.DeviceImages, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchDeviceFileById(ctx, file_id)
+}
+
+// delete a device file , image/mp4
+func (repo *complaint_repository) DeleteDeviceFiles(file_id uuid.UUID) (sql.Result, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.DeleteDeviceFiles(ctx, file_id)
+}

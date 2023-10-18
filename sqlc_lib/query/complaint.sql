@@ -58,10 +58,11 @@ c.client_id as client, ci.device_id as device_id,
 ci.id as complaint_info_id,
 ci.problem_statement as problem_statement,
 ci.problem_category as problem_category,
-ci.client_available as client_available,
 ci.status as complaint_status,
 ci.device_model as device_model, ci.device_type as device_type,
-ci.created_at as complaint_raised_at, ci.updated_at as last_modified_at
+ci.created_at as complaint_raised_at, ci.updated_at as last_modified_at,
+ci.client_available_date as client_available_date,
+ci.client_available_time_slot as client_available_time_slot
 from complaints c
 inner join complaint_info ci 
 on c.id = ci.complaint_id
@@ -71,3 +72,25 @@ where c.id = $1;
 -- name: FetchDeviceImagesByComplaintId :many
 select * from device_images
 where complaint_info_id = $1;
+
+-- name: UpdateComplaintInfo :one
+update complaint_info
+set device_id = $2,
+device_model=$3,
+device_type=$4,
+problem_statement=$5,
+problem_category=$6,
+client_available_date=$7, 
+client_available_time_slot=$8,
+updated_at = CURRENT_TIMESTAMP
+where id = $1
+returning *;
+
+
+-- name: FetchDeviceFileById :one
+select * from device_images
+where id = $1;
+
+-- name: DeleteDeviceFiles :execresult
+delete from device_images
+where id = $1;

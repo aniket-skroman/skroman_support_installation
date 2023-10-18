@@ -19,6 +19,7 @@ type S3Connection interface {
 	GetBucketName() string
 	UploadDeviceImage(file_path string) (*s3.PutObjectOutput, string, error)
 	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader) (string, error)
+	DeleteFiles(file_path string) error
 }
 
 type s3_connection struct {
@@ -30,8 +31,8 @@ type s3_connection struct {
 
 func NewS3Connection() S3Connection {
 	return &s3_connection{
-		AccessKey:  "AKIA3VMV3LWIQ6EL63WU",
-		SecretKey:  "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",
+		AccessKey:  "AKIA3VMV3LWIR6TTGJGK",
+		SecretKey:  "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",
 		Region:     "ap-south-1",
 		BucketName: "skromansupportbucket",
 	}
@@ -67,7 +68,7 @@ func (s3_bucket *s3_connection) UploadDeviceImage(file_path string) (*s3.PutObje
 
 	svc := s3.New(sess)
 
-	file, err := os.Open(file_path)
+	file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		return nil, "", err
 	}
@@ -115,4 +116,21 @@ func (s3_bucket *s3_connection) UploadDeviceVideo(file multipart.File, handler *
 	fmt.Println("Video file upload result : ", result)
 
 	return file_name, err
+}
+
+func (s3_bucket *s3_connection) DeleteFiles(file_path string) error {
+	sess, err := s3_bucket.MakeNewSession()
+
+	if err != nil {
+		return err
+	}
+
+	svc := s3.New(sess)
+
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(s3_bucket.GetBucketName()),
+		Key:    aws.String(file_path),
+	})
+
+	return err
 }

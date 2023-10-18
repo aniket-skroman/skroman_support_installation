@@ -25,6 +25,17 @@ type CreateComplaintRequestDTO struct {
 	ClientTimeSlots     ClientTimeSlots `json:"available_time_slots" binding:"required"`
 }
 
+type UpdateComplaintRequestDTO struct {
+	ComplaintInfoId     string          `json:"complaint_info_id" binding:"required"`
+	DeviceID            string          `json:"device_id" binding:"required"`
+	DeviceType          string          `json:"device_type" binding:"required"`
+	DeviceModel         string          `json:"device_model" binding:"required"`
+	ProblemStatement    string          `json:"problem_statement" binding:"required"`
+	ProblemCategory     string          `json:"problem_category" binding:"required"`
+	ClientAvailableDate string          `json:"client_available_date" binding:"required"`
+	ClientTimeSlots     ClientTimeSlots `json:"available_time_slots" binding:"required"`
+}
+
 type PaginationRequestParams struct {
 	PageID   int32 `uri:"page_id"`
 	PageSize int32 `uri:"page_size"`
@@ -40,6 +51,7 @@ type VideoRequestDTO struct {
 }
 
 type ComplaintDeviceImagesDTO struct {
+	ID        uuid.UUID `json:"id"`
 	File      string    `json:"file"`
 	CreatedAt time.Time `json:"uploaded_at"`
 	FileType  string    `json:"file_type"`
@@ -51,20 +63,21 @@ type ComplaintInfoByComplaintDTO struct {
 }
 
 type ComplaintFullDetailsDTO struct {
+	Id                  uuid.UUID                  `json:"complaint_info_id"`
 	CreatedBy           string                     `json:"created_by"`
 	Client              string                     `json:"client"`
 	DeviceID            string                     `json:"device_id"`
 	ProblemStatement    string                     `json:"problem_statement"`
 	ProblemCategory     string                     `json:"problem_category"`
-	ClientAvailable     time.Time                  `json:"client_available"`
 	ClientAvailableDate string                     `json:"client_available_date" binding:"required"`
-	ClientTimeSlots     ClientTimeSlots            `json:"available_time_slots" binding:"required"`
+	ClientTimeSlots     string                     `json:"available_time_slots" binding:"required"`
 	ComplaintStatus     string                     `json:"complaint_status"`
 	DeviceModel         string                     `json:"device_model"`
 	DeviceType          string                     `json:"device_type"`
 	ComplaintRaisedAt   time.Time                  `json:"complaint_raised_at"`
 	LastModifiedAt      time.Time                  `json:"last_modified_at"`
-	DeviceInfo          []ComplaintDeviceImagesDTO `json:"device_files"`
+	DeviceImages        []ComplaintDeviceImagesDTO `json:"device_images"`
+	DeviceVideos        []ComplaintDeviceImagesDTO `json:"device_videos"`
 }
 
 type ComplaintInfoDTO struct {

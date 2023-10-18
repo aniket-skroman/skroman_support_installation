@@ -24,10 +24,13 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 		complaint.GET("/fetch-complaint", complaint_cont.FetchComplaintDetailByComplaint)
 		complaint.POST("/upload-device-image", complaint_cont.UploadDeviceImage)
 		complaint.POST("/upload-device-video", complaint_cont.UploadDeviceVideo)
+
+		complaint.PUT("/update-complaint", complaint_cont.UpdateComplaintInfo)
+		complaint.DELETE("/delete-device-file/:file_id", complaint_cont.DeleteDeviceFiles)
 	}
 
 	device_img := router.Group("/api")
 	{
-		device_img.GET("/device-image/:directory/:image_path", complaint_cont.FetchDeviceImageURL)
+		device_img.GET("/device-file/:directory/:image_path", complaint_cont.FetchDeviceImageURL)
 	}
 }
