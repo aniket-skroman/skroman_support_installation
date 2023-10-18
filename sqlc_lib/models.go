@@ -11,6 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type ComplaintAllocations struct {
+	ID          uuid.UUID `json:"id"`
+	ComplaintID uuid.UUID `json:"complaint_id"`
+	AllocatedTo uuid.UUID `json:"allocated_to"`
+	AllocatedBy uuid.UUID `json:"allocated_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type ComplaintInfo struct {
 	ID                      uuid.UUID      `json:"id"`
 	ComplaintID             uuid.UUID      `json:"complaint_id"`

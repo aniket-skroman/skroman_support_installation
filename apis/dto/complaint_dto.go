@@ -138,3 +138,10 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 
 	return complaints
 }
+
+// ------------------------------------------ COMPLAINT ALLOCATIONS ----------------------------------------------- //
+type CreateAllocationRequestDTO struct {
+	ComplaintId string `json:"complaint_id" binding:"required"`
+	AllocateBy  string `json:"allocate_by" binding:"required"`
+	AllocateTo  string `json:"allocate_to" binding:"required"`
+}

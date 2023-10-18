@@ -366,3 +366,53 @@ func TestProxyAPI(t *testing.T) {
 	fmt.Println("Contain Data : \n", contain_data)
 	require.NotEmpty(t, contain_data)
 }
+
+// ----------------------------------------------   TEST FOR COMPLAINT ALLOCATION -------------------------------------------- //
+
+func createRandomComplaintAllocation(t *testing.T) db.ComplaintAllocations {
+
+	complaint_id, err := uuid.Parse("e2c3b926-95d7-4e37-a560-25985cae03f8")
+	require.NoError(t, err)
+
+	args := db.CreateComplaintAllocationParams{
+		ComplaintID: complaint_id,
+		AllocatedBy: uuid.New(),
+		AllocatedTo: uuid.New(),
+	}
+
+	complaint_allocation, err := testQueries.CreateComplaintAllocation(context.Background(), args)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, complaint_allocation)
+	require.NotZero(t, complaint_allocation.ID)
+
+	return complaint_allocation
+}
+
+func TestCreateComplaintAllocation(t *testing.T) {
+	createRandomComplaintAllocation(t)
+}
+
+func TestUpdateComplaintAllocation(t *testing.T) {
+	complaint := createRandomComplaintAllocation(t)
+	args := db.UpdateComplaintAllocationParams{
+		ID:          complaint.ID,
+		AllocatedTo: uuid.New(),
+		AllocatedBy: uuid.New(),
+	}
+
+	complaint_allocation, err := testQueries.UpdateComplaintAllocation(context.Background(), args)
+	require.NoError(t, err)
+	require.NotEmpty(t, complaint_allocation)
+	require.WithinDuration(t, complaint_allocation.UpdatedAt, complaint.CreatedAt, time.Second)
+}
+
+func TestFetchComplaintAllocationByComplaint(t *testing.T) {
+	complaint_id, err := uuid.Parse("e2c3b926-95d7-4e37-a560-25985cae03f8")
+	require.NoError(t, err)
+
+	complaint_allocation, err := testQueries.FetchComplaintAllocationByComplaint(context.Background(), complaint_id)
+	fmt.Println(complaint_allocation)
+	require.NoError(t, err)
+	require.NotEmpty(t, complaint_allocation)
+}
