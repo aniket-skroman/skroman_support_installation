@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"strings"
 	"time"
 
 	proxycalls "github.com/aniket-skroman/skroman_support_installation/apis/proxy_calls"
@@ -40,7 +41,7 @@ type VideoRequestDTO struct {
 }
 
 type ComplaintDeviceImagesDTO struct {
-	File      string    `json:"device_image"`
+	File      string    `json:"file"`
 	CreatedAt time.Time `json:"uploaded_at"`
 	FileType  string    `json:"file_type"`
 }
@@ -51,66 +52,75 @@ type ComplaintInfoByComplaintDTO struct {
 }
 
 type ComplaintFullDetailsDTO struct {
-	CreatedBy         string                     `json:"created_by"`
-	Client            string                     `json:"client"`
-	DeviceID          string                     `json:"device_id"`
-	ProblemStatement  string                     `json:"problem_statement"`
-	ProblemCategory   string                     `json:"problem_category"`
-	ClientAvailable   time.Time                  `json:"client_available"`
-	ComplaintStatus   string                     `json:"complaint_status"`
-	DeviceModel       string                     `json:"device_model"`
-	DeviceType        string                     `json:"device_type"`
-	ComplaintRaisedAt time.Time                  `json:"complaint_raised_at"`
-	LastModifiedAt    time.Time                  `json:"last_modified_at"`
-	DeviceInfo        []ComplaintDeviceImagesDTO `json:"device_images"`
+	CreatedBy           string                     `json:"created_by"`
+	Client              string                     `json:"client"`
+	DeviceID            string                     `json:"device_id"`
+	ProblemStatement    string                     `json:"problem_statement"`
+	ProblemCategory     string                     `json:"problem_category"`
+	ClientAvailable     time.Time                  `json:"client_available"`
+	ClientAvailableDate string                     `json:"client_available_date" binding:"required"`
+	ClientTimeSlots     ClientTimeSlots            `json:"available_time_slots" binding:"required"`
+	ComplaintStatus     string                     `json:"complaint_status"`
+	DeviceModel         string                     `json:"device_model"`
+	DeviceType          string                     `json:"device_type"`
+	ComplaintRaisedAt   time.Time                  `json:"complaint_raised_at"`
+	LastModifiedAt      time.Time                  `json:"last_modified_at"`
+	DeviceInfo          []ComplaintDeviceImagesDTO `json:"device_files"`
 }
 
 type ComplaintInfoDTO struct {
-	ID               uuid.UUID `json:"id"`
-	ComplaintID      uuid.UUID `json:"complaint_id"`
-	DeviceID         string    `json:"device_id"`
-	ProblemStatement string    `json:"problem_statement"`
-	ProblemCategory  string    `json:"problem_category"`
-	ClientAvailable  time.Time `json:"client_available"`
-	Status           string    `json:"status"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
-	DeviceType       string    `json:"device_type"`
-	DeviceModel      string    `json:"device_model"`
+	ID                  uuid.UUID `json:"id"`
+	ComplaintID         uuid.UUID `json:"complaint_id"`
+	DeviceID            string    `json:"device_id"`
+	ProblemStatement    string    `json:"problem_statement"`
+	ProblemCategory     string    `json:"problem_category"`
+	ClientAvailableDate string    `json:"client_available_date" binding:"required"`
+	ClientTimeSlots     string    `json:"available_time_slots" binding:"required"`
+	Status              string    `json:"status"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+	DeviceType          string    `json:"device_type"`
+	DeviceModel         string    `json:"device_model"`
 }
 
 func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.ComplaintInfo) interface{} {
 	if len(module_data) == 1 {
+		a_date := strings.ReplaceAll(module_data[0].ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
 		return ComplaintInfoDTO{
-			ID:               module_data[0].ID,
-			ComplaintID:      module_data[0].ComplaintID,
-			DeviceID:         module_data[0].DeviceID,
-			ProblemStatement: module_data[0].ProblemStatement,
-			ProblemCategory:  module_data[0].ProblemCategory.String,
-			ClientAvailable:  module_data[0].ClientAvailable,
-			Status:           module_data[0].Status,
-			CreatedAt:        module_data[0].CreatedAt,
-			UpdatedAt:        module_data[0].UpdatedAt,
-			DeviceType:       module_data[0].DeviceType.String,
-			DeviceModel:      module_data[0].DeviceModel.String,
+			ID:                  module_data[0].ID,
+			ComplaintID:         module_data[0].ComplaintID,
+			DeviceID:            module_data[0].DeviceID,
+			ProblemStatement:    module_data[0].ProblemStatement,
+			ProblemCategory:     module_data[0].ProblemCategory.String,
+			ClientAvailableDate: a_date,
+			ClientTimeSlots:     module_data[0].ClientAvailableTimeSlot.String,
+			Status:              module_data[0].Status,
+			CreatedAt:           module_data[0].CreatedAt,
+			UpdatedAt:           module_data[0].UpdatedAt,
+			DeviceType:          module_data[0].DeviceType.String,
+			DeviceModel:         module_data[0].DeviceModel.String,
 		}
 	}
 
 	complaints := make([]ComplaintInfoDTO, len(module_data))
 
 	for i := range module_data {
+		a_date := strings.ReplaceAll(module_data[i].ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
 		complaints[i] = ComplaintInfoDTO{
-			ID:               module_data[i].ID,
-			ComplaintID:      module_data[i].ComplaintID,
-			DeviceID:         module_data[i].DeviceID,
-			ProblemStatement: module_data[i].ProblemStatement,
-			ProblemCategory:  module_data[i].ProblemCategory.String,
-			ClientAvailable:  module_data[i].ClientAvailable,
-			Status:           module_data[i].Status,
-			CreatedAt:        module_data[i].CreatedAt,
-			UpdatedAt:        module_data[i].UpdatedAt,
-			DeviceType:       module_data[i].DeviceType.String,
-			DeviceModel:      module_data[i].DeviceModel.String,
+			ID:                  module_data[i].ID,
+			ComplaintID:         module_data[i].ComplaintID,
+			DeviceID:            module_data[i].DeviceID,
+			ProblemStatement:    module_data[i].ProblemStatement,
+			ProblemCategory:     module_data[i].ProblemCategory.String,
+			ClientAvailableDate: a_date,
+			ClientTimeSlots:     module_data[i].ClientAvailableTimeSlot.String,
+			Status:              module_data[i].Status,
+			CreatedAt:           module_data[i].CreatedAt,
+			UpdatedAt:           module_data[i].UpdatedAt,
+			DeviceType:          module_data[i].DeviceType.String,
+			DeviceModel:         module_data[i].DeviceModel.String,
 		}
 	}
 

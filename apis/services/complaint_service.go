@@ -83,17 +83,18 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 	complaint_info, err := ser.complaint_repo.CreateComplaintInfo(info_args)
 
 	complaint_info_dto := dto.ComplaintInfoDTO{
-		ID:               complaint_info.ID,
-		ComplaintID:      complaint_info.ComplaintID,
-		DeviceID:         complaint_info.DeviceID,
-		ProblemStatement: complaint_info.ProblemStatement,
-		ProblemCategory:  complaint_info.ProblemCategory.String,
-		ClientAvailable:  complaint_info.ClientAvailable,
-		Status:           complaint_info.Status,
-		CreatedAt:        complaint_info.CreatedAt,
-		UpdatedAt:        complaint_info.UpdatedAt,
-		DeviceType:       complaint_info.DeviceType.String,
-		DeviceModel:      complaint_info.DeviceModel.String,
+		ID:                  complaint_info.ID,
+		ComplaintID:         complaint_info.ComplaintID,
+		DeviceID:            complaint_info.DeviceID,
+		ProblemStatement:    complaint_info.ProblemStatement,
+		ProblemCategory:     complaint_info.ProblemCategory.String,
+		ClientAvailableDate: req.ClientAvailableDate,
+		ClientTimeSlots:     req.ClientTimeSlots.From + "-" + req.ClientTimeSlots.To,
+		Status:              complaint_info.Status,
+		CreatedAt:           complaint_info.CreatedAt,
+		UpdatedAt:           complaint_info.UpdatedAt,
+		DeviceType:          complaint_info.DeviceType.String,
+		DeviceModel:         complaint_info.DeviceModel.String,
 	}
 
 	return complaint_info_dto, err
