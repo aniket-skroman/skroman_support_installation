@@ -56,7 +56,6 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 	}
 
 	// create a complaint info
-	c_time, err := time.Parse("2006-01-02 15:04:05", req.ClientAvailable)
 	avalibale_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)
 	time_slots := fmt.Sprintf("%s %s", req.ClientTimeSlots.From, req.ClientTimeSlots.To)
 	if err != nil {
@@ -71,7 +70,7 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 		DeviceModel:      sql.NullString{String: req.DeviceModel, Valid: true},
 		ProblemStatement: req.ProblemStatement,
 		ProblemCategory:  sql.NullString{String: req.ProblemCategory, Valid: true},
-		ClientAvailable:  c_time,
+		ClientAvailable:  time.Now(),
 		Status:           "INIT",
 		ClientAvailableDate: sql.NullTime{
 			Time:  avalibale_date,
