@@ -27,6 +27,7 @@ type ComplaintController interface {
 	UploadDeviceVideo(*gin.Context)
 	UpdateComplaintInfo(ctx *gin.Context)
 	DeleteDeviceFiles(ctx *gin.Context)
+	DeleteComplaint(ctx *gin.Context)
 }
 
 type complaint_controller struct {
@@ -186,6 +187,11 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 
 	err = cont.comp_serv.UploadDeviceImage(tempFile.Name(), complaint_info_id)
 	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		}
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
@@ -206,7 +212,7 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 	}
 
 	if complaint_info_id == "" {
-		cont.response = utils.BuildFailedResponse("invalid comaplaint id")
+		cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -220,6 +226,11 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 	err = cont.comp_serv.UploadDeviceVideo(file, handler, complaint_info_id)
 
 	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		}
 		response := utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, response)
 		return
@@ -241,6 +252,11 @@ func (cont *complaint_controller) UpdateComplaintInfo(ctx *gin.Context) {
 	result, err := cont.comp_serv.UpdateComplaintInfo(req)
 
 	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		}
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
@@ -282,6 +298,10 @@ func (cont *complaint_controller) DeleteDeviceFiles(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 
+		} else if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
 		}
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
@@ -290,4 +310,32 @@ func (cont *complaint_controller) DeleteDeviceFiles(ctx *gin.Context) {
 
 	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, device_file_id)
 	ctx.JSON(http.StatusOK, cont.response)
+}
+
+func (cont *complaint_controller) DeleteComplaint(ctx *gin.Context) {
+	complaint_id := ctx.Param("complaint_id")
+
+	if complaint_id == "" {
+		cont.response = utils.BuildFailedResponse(utils.REQUIRED_PARAMS)
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	err := cont.comp_serv.DeleteComplaint(complaint_id)
+
+	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		}
+
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
+	ctx.JSON(http.StatusOK, cont.response)
+
 }

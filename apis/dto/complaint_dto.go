@@ -58,12 +58,12 @@ type ComplaintDeviceImagesDTO struct {
 }
 
 type AllocatedEmpDetailsDTO struct {
-	FullName  string    `json:"full_name,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Contact   string    `json:"contact,omitempty"`
-	UserType  string    `json:"user_type,omitempty"`
-	CreatedAt time.Time `json:"allocate_date,omitempty"`
-	UpdatedAt time.Time `json:"allocate_modify_date,omitempty"`
+	FullName  string      `json:"full_name,omitempty"`
+	Email     string      `json:"email,omitempty"`
+	Contact   string      `json:"contact,omitempty"`
+	UserType  string      `json:"user_type,omitempty"`
+	CreatedAt interface{} `json:"allocate_date,omitempty"`
+	UpdatedAt interface{} `json:"allocate_modify_date,omitempty"`
 }
 
 type ComplaintInfoByComplaintDTO struct {

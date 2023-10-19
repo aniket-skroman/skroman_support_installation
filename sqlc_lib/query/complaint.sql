@@ -94,3 +94,17 @@ where id = $1;
 -- name: DeleteDeviceFiles :execresult
 delete from device_images
 where id = $1;
+
+-- name: UpdateComplaintStatus :execresult
+update complaint_info
+set status = $2,
+updated_at = CURRENT_TIMESTAMP
+where complaint_id = $1;
+
+-- name: DeleteComplaintInfoBYId :execresult
+delete from complaint_info
+where complaint_id = $1;
+
+-- name: DeleteComplaintByID :execresult
+delete from complaints
+where id = $1;

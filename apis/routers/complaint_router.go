@@ -29,6 +29,7 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 
 		complaint.PUT("/update-complaint", complaint_cont.UpdateComplaintInfo)
 		complaint.DELETE("/delete-device-file/:file_id", complaint_cont.DeleteDeviceFiles)
+		complaint.DELETE("/delete-complaint/:complaint_id", complaint_cont.DeleteComplaint)
 	}
 
 	device_img := router.Group("/api")

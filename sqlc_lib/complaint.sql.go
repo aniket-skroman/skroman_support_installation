@@ -139,6 +139,24 @@ func (q *Queries) CreateComplaintInfo(ctx context.Context, arg CreateComplaintIn
 	return i, err
 }
 
+const deleteComplaintByID = `-- name: DeleteComplaintByID :execresult
+delete from complaints
+where id = $1
+`
+
+func (q *Queries) DeleteComplaintByID(ctx context.Context, id uuid.UUID) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteComplaintByID, id)
+}
+
+const deleteComplaintInfoBYId = `-- name: DeleteComplaintInfoBYId :execresult
+delete from complaint_info
+where complaint_id = $1
+`
+
+func (q *Queries) DeleteComplaintInfoBYId(ctx context.Context, complaintID uuid.UUID) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteComplaintInfoBYId, complaintID)
+}
+
 const deleteDeviceFiles = `-- name: DeleteDeviceFiles :execresult
 delete from device_images
 where id = $1
@@ -359,6 +377,22 @@ func (q *Queries) UpdateComplaintInfo(ctx context.Context, arg UpdateComplaintIn
 		&i.ClientAvailableTimeSlot,
 	)
 	return i, err
+}
+
+const updateComplaintStatus = `-- name: UpdateComplaintStatus :execresult
+update complaint_info
+set status = $2,
+updated_at = CURRENT_TIMESTAMP
+where complaint_id = $1
+`
+
+type UpdateComplaintStatusParams struct {
+	ComplaintID uuid.UUID `json:"complaint_id"`
+	Status      string    `json:"status"`
+}
+
+func (q *Queries) UpdateComplaintStatus(ctx context.Context, arg UpdateComplaintStatusParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateComplaintStatus, arg.ComplaintID, arg.Status)
 }
 
 const uploadDeviceImages = `-- name: UploadDeviceImages :one

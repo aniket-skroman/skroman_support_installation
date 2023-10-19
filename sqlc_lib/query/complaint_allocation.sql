@@ -18,3 +18,7 @@ returning *;
 -- name: FetchComplaintAllocationByComplaint :one
 select * from complaint_allocations
 where complaint_id = $1;
+
+-- name: DeleteComplaintAllcation :execresult
+delete from complaint_allocations
+where complaint_id = $1;

@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -39,6 +40,15 @@ func (q *Queries) CreateComplaintAllocation(ctx context.Context, arg CreateCompl
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteComplaintAllcation = `-- name: DeleteComplaintAllcation :execresult
+delete from complaint_allocations
+where complaint_id = $1
+`
+
+func (q *Queries) DeleteComplaintAllcation(ctx context.Context, complaintID uuid.UUID) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteComplaintAllcation, complaintID)
 }
 
 const fetchComplaintAllocationByComplaint = `-- name: FetchComplaintAllocationByComplaint :one

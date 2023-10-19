@@ -17,3 +17,7 @@ func NewStore(dbs *sql.DB) *Store {
 		Queries: db.New(dbs),
 	}
 }
+
+func (s *Store) DB_instatnce() *sql.DB {
+	return s.db
+}

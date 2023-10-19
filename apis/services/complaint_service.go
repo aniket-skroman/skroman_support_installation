@@ -32,6 +32,7 @@ type ComplaintService interface {
 	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader, complaint_info_id string) error
 	UpdateComplaintInfo(req dto.UpdateComplaintRequestDTO) (dto.ComplaintInfoDTO, error)
 	DeleteDeviceFiles(file_id string) error
+	DeleteComplaint(complaint_id string) error
 }
 
 type complaint_service struct {
@@ -62,7 +63,7 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 
 	// create a complaint info
 	avalibale_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)
-	time_slots := fmt.Sprintf("%s %s", req.ClientTimeSlots.From, req.ClientTimeSlots.To)
+	time_slots := fmt.Sprintf("%s-%s", req.ClientTimeSlots.From, req.ClientTimeSlots.To)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,12 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func() {
 		defer wg.Done()
 		user_data, _ := ser.fetch_user_info(complaint_info.CreatedBy.String())
-		result.ComplaintInfo.CreatedBy = user_data.FullName
+		if user_data.FullName == "" {
+			result.ComplaintInfo.CreatedBy = "NOT AVAILABEL"
+		} else {
+			result.ComplaintInfo.CreatedBy = user_data.FullName
+
+		}
 	}()
 
 	// fetch allocation details
@@ -398,6 +404,32 @@ func (ser *complaint_service) DeleteDeviceFiles(file_id string) error {
 	return err
 }
 
+// delete a complaint
+func (ser *complaint_service) DeleteComplaint(complaint_id string) error {
+	complaint_obj, err := helper.ValidateUUID(complaint_id)
+
+	if err != nil {
+		return err
+	}
+
+	device_images, err := ser.complaint_repo.DeleteComplaint(complaint_obj)
+
+	if err != nil {
+		return err
+	}
+
+	// make a s3 conncection and delete a file one by one
+	s3_connection := connections.NewS3Connection()
+	for i := range device_images {
+		err := s3_connection.DeleteFiles(device_images[i].DeviceImage)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (ser *complaint_service) remove_local_files(file_path string) {
 	_ = os.Remove(file_path)
 }
@@ -539,13 +571,17 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	if err != nil {
 		return dto.AllocatedEmpDetailsDTO{}, err
 	}
+	result := dto.AllocatedEmpDetailsDTO{
+		FullName: user_data.FullName,
+		Email:    user_data.Email,
+		Contact:  user_data.Contact,
+		UserType: user_data.UserType,
+	}
 
-	return dto.AllocatedEmpDetailsDTO{
-		FullName:  user_data.FullName,
-		Email:     user_data.Email,
-		Contact:   user_data.Contact,
-		UserType:  user_data.UserType,
-		CreatedAt: allocation_data.CreatedAt,
-		UpdatedAt: allocation_data.UpdatedAt,
-	}, nil
+	if !allocation_data.CreatedAt.IsZero() && !allocation_data.UpdatedAt.IsZero() {
+		result.CreatedAt = allocation_data.CreatedAt
+		result.UpdatedAt = allocation_data.UpdatedAt
+	}
+
+	return result, nil
 }
