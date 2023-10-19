@@ -328,6 +328,10 @@ func (cont *complaint_controller) DeleteComplaint(ctx *gin.Context) {
 			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
+		} else if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse(utils.DATA_NOT_FOUND)
+			ctx.JSON(http.StatusNotFound, cont.response)
+			return
 		}
 
 		cont.response = utils.BuildFailedResponse(err.Error())
@@ -337,5 +341,4 @@ func (cont *complaint_controller) DeleteComplaint(ctx *gin.Context) {
 
 	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
 	ctx.JSON(http.StatusOK, cont.response)
-
 }

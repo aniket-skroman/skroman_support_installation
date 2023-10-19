@@ -108,3 +108,7 @@ where complaint_id = $1;
 -- name: DeleteComplaintByID :execresult
 delete from complaints
 where id = $1;
+
+-- name: FetchComplaintByComplaintId :one
+select * from complaints
+where id = $1;

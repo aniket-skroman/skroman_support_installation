@@ -216,6 +216,24 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 	return items, nil
 }
 
+const fetchComplaintByComplaintId = `-- name: FetchComplaintByComplaintId :one
+select id, client_id, created_by, created_at, updated_at from complaints
+where id = $1
+`
+
+func (q *Queries) FetchComplaintByComplaintId(ctx context.Context, id uuid.UUID) (Complaints, error) {
+	row := q.db.QueryRowContext(ctx, fetchComplaintByComplaintId, id)
+	var i Complaints
+	err := row.Scan(
+		&i.ID,
+		&i.ClientID,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const fetchComplaintDetailByComplaint = `-- name: FetchComplaintDetailByComplaint :one
 select c.created_by as created_by,
 c.client_id as client, ci.device_id as device_id,

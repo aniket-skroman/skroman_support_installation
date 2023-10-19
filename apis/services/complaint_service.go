@@ -412,6 +412,13 @@ func (ser *complaint_service) DeleteComplaint(complaint_id string) error {
 		return err
 	}
 
+	// check this complaint id is exists or not
+	_, err = ser.FetchComplaintById(complaint_id)
+
+	if err != nil {
+		return err
+	}
+
 	device_images, err := ser.complaint_repo.DeleteComplaint(complaint_obj)
 
 	if err != nil {
@@ -584,4 +591,14 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	}
 
 	return result, nil
+}
+
+func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.Complaints, error) {
+	complaint_obj, err := helper.ValidateUUID(complaint_id)
+
+	if err != nil {
+		return db.Complaints{}, err
+	}
+
+	return ser.complaint_repo.FetchComplaintById(complaint_obj)
 }

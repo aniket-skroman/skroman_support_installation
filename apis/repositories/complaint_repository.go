@@ -23,6 +23,7 @@ type ComplaintRepository interface {
 	DeleteDeviceFiles(file_id uuid.UUID) (sql.Result, error)
 	FetchDeviceFileById(file_id uuid.UUID) (db.DeviceImages, error)
 	DeleteComplaint(complaint_id uuid.UUID) ([]db.DeviceImages, error)
+	FetchComplaintById(complaint_id uuid.UUID) (db.Complaints, error)
 }
 
 type complaint_repository struct {

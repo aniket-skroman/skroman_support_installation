@@ -149,3 +149,10 @@ func (repo *complaint_repository) DeleteComplaint(complaint_id uuid.UUID) ([]db.
 	}
 	return device_files, tx.Commit()
 }
+
+func (repo *complaint_repository) FetchComplaintById(complaint_id uuid.UUID) (db.Complaints, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchComplaintByComplaintId(ctx, complaint_id)
+}
