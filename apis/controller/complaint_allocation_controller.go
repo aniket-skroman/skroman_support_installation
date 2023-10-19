@@ -1,16 +1,21 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
+	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type ComplaintAllocationController interface {
 	AllocateComplaint(ctx *gin.Context)
+	UpdateAllocateComplaint(ctx *gin.Context)
 }
 
 type allocation_controller struct {
@@ -29,14 +34,29 @@ func (cont *allocation_controller) AllocateComplaint(ctx *gin.Context) {
 	var req dto.CreateAllocationRequestDTO
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.RequestParamsMissingResponse(helper.Error_handler(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
 
+	// if jwt service failed to extract user id
+	if utils.TOKEN_ID == "" {
+		cont.response = utils.BuildFailedResponse("failed to allocate service")
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	// set a allocate by who handle the operation
+	req.AllocateBy = utils.TOKEN_ID
+
 	err := cont.allocation_serv.AllocateComplaint(req)
 
 	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse("invalid params has been requested")
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		}
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
@@ -44,4 +64,45 @@ func (cont *allocation_controller) AllocateComplaint(ctx *gin.Context) {
 
 	cont.response = utils.BuildSuccessResponse(utils.DATA_INSERTED, utils.COMPLAINT_DATA, utils.EmptyObj{})
 	ctx.JSON(http.StatusCreated, cont.response)
+}
+
+func (cont *allocation_controller) UpdateAllocateComplaint(ctx *gin.Context) {
+	var req dto.UpdateAllocateComplaintRequestDTO
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		cont.response = utils.RequestParamsMissingResponse(helper.Error_handler(err))
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	// if jwt service failed to extract user id
+	if utils.TOKEN_ID == "" {
+		cont.response = utils.BuildFailedResponse("failed to update allocate complaint")
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	// set a allocate by who handle the operation
+	req.AllocateBy = utils.TOKEN_ID
+
+	err := cont.allocation_serv.UpdateComplaintAllocation(req)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("invalid allocation detect")
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		} else if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse("invalid params has been requested")
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		}
+
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse(utils.UPDATE_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
+	ctx.JSON(http.StatusOK, cont.response)
 }

@@ -211,11 +211,11 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 		return
 	}
 
-	if ctx.Request.ContentLength > 5*1024*1024 {
-		cont.response = utils.BuildFailedResponse("image should be less that 5 MB")
-		ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
-		return
-	}
+	// if ctx.Request.ContentLength > 5*1024*1024 {
+	// 	cont.response = utils.BuildFailedResponse("image should be less that 5 MB")
+	// 	ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
+	// 	return
+	// }
 
 	err = cont.comp_serv.UploadDeviceVideo(file, handler, complaint_info_id)
 

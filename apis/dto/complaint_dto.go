@@ -57,27 +57,38 @@ type ComplaintDeviceImagesDTO struct {
 	FileType  string    `json:"file_type"`
 }
 
+type AllocatedEmpDetailsDTO struct {
+	FullName  string    `json:"full_name,omitempty"`
+	Email     string    `json:"email,omitempty"`
+	Contact   string    `json:"contact,omitempty"`
+	UserType  string    `json:"user_type,omitempty"`
+	CreatedAt time.Time `json:"allocate_date,omitempty"`
+	UpdatedAt time.Time `json:"allocate_modify_date,omitempty"`
+}
+
 type ComplaintInfoByComplaintDTO struct {
 	ClientInfo    proxycalls.ClientInfoDTO `json:"client_info"`
 	ComplaintInfo ComplaintFullDetailsDTO  `json:"complaint_info"`
 }
 
 type ComplaintFullDetailsDTO struct {
-	Id                  uuid.UUID                  `json:"complaint_info_id"`
-	CreatedBy           string                     `json:"created_by"`
-	Client              string                     `json:"client"`
-	DeviceID            string                     `json:"device_id"`
-	ProblemStatement    string                     `json:"problem_statement"`
-	ProblemCategory     string                     `json:"problem_category"`
-	ClientAvailableDate string                     `json:"client_available_date" binding:"required"`
-	ClientTimeSlots     string                     `json:"available_time_slots" binding:"required"`
-	ComplaintStatus     string                     `json:"complaint_status"`
-	DeviceModel         string                     `json:"device_model"`
-	DeviceType          string                     `json:"device_type"`
-	ComplaintRaisedAt   time.Time                  `json:"complaint_raised_at"`
-	LastModifiedAt      time.Time                  `json:"last_modified_at"`
-	DeviceImages        []ComplaintDeviceImagesDTO `json:"device_images"`
-	DeviceVideos        []ComplaintDeviceImagesDTO `json:"device_videos"`
+	Id                     uuid.UUID                  `json:"complaint_info_id"`
+	ComplaintId            uuid.UUID                  `json:"complaint_id"`
+	CreatedBy              string                     `json:"created_by"`
+	Client                 string                     `json:"client"`
+	DeviceID               string                     `json:"device_id"`
+	ProblemStatement       string                     `json:"problem_statement"`
+	ProblemCategory        string                     `json:"problem_category"`
+	ClientAvailableDate    string                     `json:"client_available_date" binding:"required"`
+	ClientTimeSlots        string                     `json:"available_time_slots" binding:"required"`
+	ComplaintStatus        string                     `json:"complaint_status"`
+	DeviceModel            string                     `json:"device_model"`
+	DeviceType             string                     `json:"device_type"`
+	ComplaintRaisedAt      time.Time                  `json:"complaint_raised_at"`
+	LastModifiedAt         time.Time                  `json:"last_modified_at"`
+	DeviceImages           []ComplaintDeviceImagesDTO `json:"device_images"`
+	DeviceVideos           []ComplaintDeviceImagesDTO `json:"device_videos"`
+	AllocatedEmpDetailsDTO AllocatedEmpDetailsDTO     `json:"allocation_info"`
 }
 
 type ComplaintInfoDTO struct {
@@ -142,6 +153,12 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 // ------------------------------------------ COMPLAINT ALLOCATIONS ----------------------------------------------- //
 type CreateAllocationRequestDTO struct {
 	ComplaintId string `json:"complaint_id" binding:"required"`
-	AllocateBy  string `json:"allocate_by" binding:"required"`
+	AllocateBy  string `json:"allocate_by" `
 	AllocateTo  string `json:"allocate_to" binding:"required"`
+}
+
+type UpdateAllocateComplaintRequestDTO struct {
+	Id         string `form:"id" binding:"required"`
+	AllocateTo string `form:"allocate_to" binding:"required"`
+	AllocateBy string `form:"allocate_by" `
 }

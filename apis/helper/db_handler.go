@@ -11,6 +11,7 @@ import (
 func Handle_db_err(err error) (err_ error) {
 	switch e := err.(type) {
 	case *pq.Error:
+		fmt.Println("DB Error Code : ", e.Code)
 		switch e.Code {
 		case "23502":
 			// not-null constraint violation

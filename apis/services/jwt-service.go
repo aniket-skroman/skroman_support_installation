@@ -13,6 +13,7 @@ import (
 
 type JWTService interface {
 	GenerateToken(userID string, userType string) string
+	GenerateTempToken(UserID string, userType string) string
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
@@ -86,4 +87,24 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 
 		return []byte(j.secretKey), nil
 	})
+}
+
+func (j *jwtService) GenerateTempToken(UserID string, userType string) string {
+	claims := &jwtCustomClaim{
+		UserID,
+		userType,
+		time.Now().Add(10 * time.Minute),
+		jwt.StandardClaims{
+			ExpiresAt: int64(5 * time.Minute),
+			Issuer:    j.issuer,
+			IssuedAt:  time.Now().Add(-5 * time.Minute).Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	t, err := token.SignedString([]byte(j.secretKey))
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

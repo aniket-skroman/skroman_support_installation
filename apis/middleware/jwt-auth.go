@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,7 +21,7 @@ func AuthorizeJWT(jwtService services.JWTService) gin.HandlerFunc {
 			return
 		}
 
-		_, err := jwtService.ValidateToken(authHeader)
+		token, err := jwtService.ValidateToken(authHeader)
 
 		if err != nil {
 			if strings.Contains(err.Error(), "expired") {
@@ -27,17 +29,18 @@ func AuthorizeJWT(jwtService services.JWTService) gin.HandlerFunc {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 				return
 			}
+
 			response := utils.BuildFailedResponse("Invalid token provided !")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, response)
 			return
 		}
 
-		// if token.Valid {
-		// 	//claims := token.Claims.(jwt.MapClaims)
-		// 	//userId := fmt.Sprintf("%v", claims["user_id"])
-		// 	//userType := fmt.Sprintf("%v", claims["user_type"])
+		if token.Valid {
+			claims := token.Claims.(jwt.MapClaims)
+			utils.TOKEN_ID = fmt.Sprintf("%v", claims["user_id"])
+			utils.USER_TYPE = fmt.Sprintf("%v", claims["user_type"])
 
-		// }
+		}
 
 	}
 }

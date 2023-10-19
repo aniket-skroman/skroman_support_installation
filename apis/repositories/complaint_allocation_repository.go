@@ -6,11 +6,14 @@ import (
 
 	"github.com/aniket-skroman/skroman_support_installation/apis"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
+	"github.com/google/uuid"
 )
 
 type ComplaintAllocationRepository interface {
 	Init() (context.Context, context.CancelFunc)
 	CreateComplaintAllocation(args db.CreateComplaintAllocationParams) error
+	UpdateComplaintAllocation(args db.UpdateComplaintAllocationParams) error
+	FetchAllocationByComplaintId(complaint_id uuid.UUID) (db.ComplaintAllocations, error)
 }
 
 type allocation_repository struct {

@@ -11,10 +11,12 @@ import (
 
 func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	var (
-		complaint_repo = repositories.NewComplaintRepository(store)
-		jwt_service    = services.NewJWTService()
-		complaint_serv = services.NewComplaintService(complaint_repo, jwt_service)
-		complaint_cont = controller.NewComplaintController(complaint_serv)
+		complaint_repo  = repositories.NewComplaintRepository(store)
+		allocation_repo = repositories.NewComplaintAllocationRepository(store)
+		allocation_ser  = services.NewComplaintAllocationService(allocation_repo)
+		jwt_service     = services.NewJWTService()
+		complaint_serv  = services.NewComplaintService(complaint_repo, jwt_service, allocation_ser)
+		complaint_cont  = controller.NewComplaintController(complaint_serv)
 	)
 
 	complaint := router.Group("/api", middleware.AuthorizeJWT(jwt_service))

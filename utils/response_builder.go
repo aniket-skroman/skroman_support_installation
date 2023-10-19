@@ -36,6 +36,17 @@ func BuildResponseWithPagination(msg, err, data_name string, data interface{}) m
 	return response
 }
 
+func RequestParamsMissingResponse(err interface{}) map[string]interface{} {
+	response := map[string]interface{}{}
+
+	response["status"] = false
+	response["message"] = FAILED_PROCESS
+	response["error"] = err
+	response[COMPLAINT_DATA] = EmptyObj{}
+
+	return response
+}
+
 func BuildSuccessResponse(msg, data_name string, data interface{}) map[string]interface{} {
 	return response_builder(true, &msg, &EmptyStr, &data_name, &data, false)
 }

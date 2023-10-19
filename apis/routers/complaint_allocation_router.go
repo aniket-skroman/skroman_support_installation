@@ -20,5 +20,6 @@ func ComplaintAllocationRouter(router *gin.Engine, store *apis.Store) {
 	allocation := router.Group("/api", middleware.AuthorizeJWT(jwtService))
 	{
 		allocation.POST("/allocate-complaint", allocation_cont.AllocateComplaint)
+		allocation.PUT("/update-complaint-allocation", allocation_cont.UpdateAllocateComplaint)
 	}
 }
