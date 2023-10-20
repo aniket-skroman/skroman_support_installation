@@ -416,3 +416,24 @@ func TestFetchComplaintAllocationByComplaint(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, complaint_allocation)
 }
+
+func TestFetchAllCounts(t *testing.T) {
+	counts, err := testQueries.CountAllComplaint(aws.BackgroundContext())
+
+	require.NoError(t, err)
+	fmt.Println("All Complaints : ", counts.AllComplaints)
+	fmt.Println("Pending Complaints : ", counts.PendingComplaints)
+	fmt.Println("Completed Complaints : ", counts.ComletedComplaints)
+	fmt.Println("Allocated Complaints : ", counts.AllocatedComplaints)
+	// fmt.Println("Monthly Complaints : ", counts.AllocatedComplaints)
+
+}
+
+func TestMonthWiseData(t *testing.T) {
+	rows, err := testQueries.FetchCountByMonth(context.Background())
+	require.NoError(t, err)
+
+	for _, r := range rows {
+		fmt.Println("Generated Row :", r.Month, r.Count)
+	}
+}

@@ -28,6 +28,8 @@ type ComplaintController interface {
 	UpdateComplaintInfo(ctx *gin.Context)
 	DeleteDeviceFiles(ctx *gin.Context)
 	DeleteComplaint(ctx *gin.Context)
+	ComplaintResolve(ctx *gin.Context)
+	FetchAllComplaintCounts(ctx *gin.Context)
 }
 
 type complaint_controller struct {
@@ -341,4 +343,38 @@ func (cont *complaint_controller) DeleteComplaint(ctx *gin.Context) {
 
 	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
 	ctx.JSON(http.StatusOK, cont.response)
+}
+
+func (cont *complaint_controller) ComplaintResolve(ctx *gin.Context) {
+	complaint_id := ctx.Param("complaint_id")
+
+	if complaint_id == "" {
+		cont.response = utils.RequestParamsMissingResponse(utils.REQUIRED_PARAMS)
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	err := cont.comp_serv.ComplaintResolve(complaint_id)
+
+	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
+			ctx.JSON(http.StatusConflict, cont.response)
+			return
+		}
+
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse("complaint has been resolved", utils.COMPLAINT_DATA, utils.EmptyObj{})
+	ctx.JSON(http.StatusOK, cont.response)
+}
+
+func (cont *complaint_controller) FetchAllComplaintCounts(ctx *gin.Context) {
+	result := cont.comp_serv.FetchAllComplaintCounts()
+
+	cont.response = utils.BuildSuccessResponse(utils.FETCHED_SUCCESS, utils.COMPLAINT_DATA, result)
+	ctx.JSON(http.StatusOK, result)
 }

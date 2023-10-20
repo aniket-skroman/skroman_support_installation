@@ -41,13 +41,49 @@ func (q *Queries) AddDeviceImages(ctx context.Context, arg AddDeviceImagesParams
 	return i, err
 }
 
-const countComplaints = `-- name: CountComplaints :execresult
-select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_info
-where status = 'INIT'
+const countAllComplaint = `-- name: CountAllComplaint :one
+select 
+(
+    select count(*) from complaint_info
+) as all_complaints,
+(
+    select count(*) from complaint_info where status = 'INIT'
+) as pending_complaints,
+(
+    select count(*) from complaint_info where status = 'COMPLETE'
+) as comleted_complaints,
+(
+    select count(*) from complaint_info where status = 'ALLOCATE'
+) as allocated_complaints
+from complaints as c
 `
 
-func (q *Queries) CountComplaints(ctx context.Context) (sql.Result, error) {
-	return q.db.ExecContext(ctx, countComplaints)
+type CountAllComplaintRow struct {
+	AllComplaints       int64 `json:"all_complaints"`
+	PendingComplaints   int64 `json:"pending_complaints"`
+	ComletedComplaints  int64 `json:"comleted_complaints"`
+	AllocatedComplaints int64 `json:"allocated_complaints"`
+}
+
+func (q *Queries) CountAllComplaint(ctx context.Context) (CountAllComplaintRow, error) {
+	row := q.db.QueryRowContext(ctx, countAllComplaint)
+	var i CountAllComplaintRow
+	err := row.Scan(
+		&i.AllComplaints,
+		&i.PendingComplaints,
+		&i.ComletedComplaints,
+		&i.AllocatedComplaints,
+	)
+	return i, err
+}
+
+const countComplaints = `-- name: CountComplaints :execresult
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_info
+where status = $1
+`
+
+func (q *Queries) CountComplaints(ctx context.Context, status string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, countComplaints, status)
 }
 
 const createComplaint = `-- name: CreateComplaint :one
@@ -168,19 +204,20 @@ func (q *Queries) DeleteDeviceFiles(ctx context.Context, id uuid.UUID) (sql.Resu
 
 const fetchAllComplaints = `-- name: FetchAllComplaints :many
 select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_info
-where status ='INIT'
+where status =$3
 order by created_at desc 
 limit $1
 offset $2
 `
 
 type FetchAllComplaintsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+	Status string `json:"status"`
 }
 
 func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaintsParams) ([]ComplaintInfo, error) {
-	rows, err := q.db.QueryContext(ctx, fetchAllComplaints, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, fetchAllComplaints, arg.Limit, arg.Offset, arg.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -286,6 +323,57 @@ func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.U
 		&i.ClientAvailableTimeSlot,
 	)
 	return i, err
+}
+
+const fetchCountByMonth = `-- name: FetchCountByMonth :many
+with lm as 
+(
+SELECT
+	to_char(d, 'Month') as n_month
+FROM
+    GENERATE_SERIES(
+        now(),
+        now() - interval '12 months',
+        interval '-1 months'
+    ) AS d
+)
+
+
+select  l.n_month as month,
+count(distinct ci.id)
+from lm as l
+left join complaint_info as ci 
+on l.n_month = to_char(ci.created_at, 'Month')
+group by to_char(ci.created_at, 'Month'),l.n_month
+order by l.n_month desc
+`
+
+type FetchCountByMonthRow struct {
+	Month string `json:"month"`
+	Count int64  `json:"count"`
+}
+
+func (q *Queries) FetchCountByMonth(ctx context.Context) ([]FetchCountByMonthRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchCountByMonth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FetchCountByMonthRow{}
+	for rows.Next() {
+		var i FetchCountByMonthRow
+		if err := rows.Scan(&i.Month, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fetchDeviceFileById = `-- name: FetchDeviceFileById :one

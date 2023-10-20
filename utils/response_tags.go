@@ -8,14 +8,14 @@ const USER_REGISTRATION_SUCCESS = "User registration has been successful"
 const INVALID_PARAMS = "Invalid params, can't process"
 
 // REQUIRED_PARAMS --------------- DEVELOPER MESSAGES -----------------//
-const REQUIRED_PARAMS = "Please provide a required params."
+const REQUIRED_PARAMS = "please provide a required params."
 const FETCHED_FAILED = "Failed to fetch the data from server."
 const FETCHED_SUCCESS = "Data fetched successfully."
 
 // DATA_INSERTED -------------- END USERS MESSAGES ----------------//
 const DATA_INSERTED = "Operation successful."
 const DATA_INSERTED_FAILED = "Operation failed, please try again."
-const UPDATE_FAILED = "Update failed, please try again"
+const UPDATE_FAILED = "update failed please try again"
 const UPDATE_SUCCESS = "Update successful."
 const PASSWORD_RESET = "Password reset successful."
 const FORGOT_PASSWORD = "Forgot password successful."

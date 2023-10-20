@@ -15,7 +15,7 @@ type ComplaintRepository interface {
 	CreateComplaint(db.CreateComplaintParams) (db.Complaints, error)
 	CreateComplaintInfo(db.CreateComplaintInfoParams) (db.ComplaintInfo, error)
 	FetchAllComplaints(db.FetchAllComplaintsParams) ([]db.ComplaintInfo, error)
-	CountComplaints() (sql.Result, error)
+	CountComplaints(status string) (sql.Result, error)
 	FetchComplaintDetailByComplaint(uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error)
 	FetchDeviceImagesByComplaintId(uuid.UUID) ([]db.DeviceImages, error)
 	UploadDeviceImage(db.UploadDeviceImagesParams) (db.DeviceImages, error)
@@ -24,6 +24,9 @@ type ComplaintRepository interface {
 	FetchDeviceFileById(file_id uuid.UUID) (db.DeviceImages, error)
 	DeleteComplaint(complaint_id uuid.UUID) ([]db.DeviceImages, error)
 	FetchComplaintById(complaint_id uuid.UUID) (db.Complaints, error)
+	UpdateComplaintStatus(args db.UpdateComplaintStatusParams) (sql.Result, error)
+	AllComplaintsCount() (db.CountAllComplaintRow, error)
+	FetchCountByMonths() ([]db.FetchCountByMonthRow, error)
 }
 
 type complaint_repository struct {

@@ -31,11 +31,12 @@ func (repo *complaint_repository) FetchAllComplaints(args db.FetchAllComplaintsP
 	return repo.db.Queries.FetchAllComplaints(ctx, args)
 }
 
-func (repo *complaint_repository) CountComplaints() (sql.Result, error) {
+// complaint count by status
+func (repo *complaint_repository) CountComplaints(status string) (sql.Result, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
 
-	return repo.db.Queries.CountComplaints(ctx)
+	return repo.db.Queries.CountComplaints(ctx, status)
 }
 
 func (repo *complaint_repository) FetchComplaintDetailByComplaint(complaint_id uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error) {
@@ -155,4 +156,26 @@ func (repo *complaint_repository) FetchComplaintById(complaint_id uuid.UUID) (db
 	defer cancel()
 
 	return repo.db.Queries.FetchComplaintByComplaintId(ctx, complaint_id)
+}
+
+func (repo *complaint_repository) UpdateComplaintStatus(args db.UpdateComplaintStatusParams) (sql.Result, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.UpdateComplaintStatus(ctx, args)
+}
+
+func (repo *complaint_repository) AllComplaintsCount() (db.CountAllComplaintRow, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.CountAllComplaint(ctx)
+
+}
+
+func (repo *complaint_repository) FetchCountByMonths() ([]db.FetchCountByMonthRow, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchCountByMonth(ctx)
 }

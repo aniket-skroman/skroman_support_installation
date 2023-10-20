@@ -33,14 +33,14 @@ insert into device_images (
 
 -- name: FetchAllComplaints :many
 select * from complaint_info
-where status ='INIT'
+where status =$3
 order by created_at desc 
 limit $1
 offset $2;
 
 -- name: CountComplaints :execresult
 select * from complaint_info
-where status = 'INIT';
+where status = $1;
 
 
 -- name: UploadDeviceImages :one
@@ -112,3 +112,45 @@ where id = $1;
 -- name: FetchComplaintByComplaintId :one
 select * from complaints
 where id = $1;
+
+
+-- name: CountAllComplaint :one
+select 
+(
+    select count(*) from complaint_info
+) as all_complaints,
+(
+    select count(*) from complaint_info where status = 'INIT'
+) as pending_complaints,
+(
+    select count(*) from complaint_info where status = 'COMPLETE'
+) as comleted_complaints,
+(
+    select count(*) from complaint_info where status = 'ALLOCATE'
+) as allocated_complaints
+from complaints as c;
+
+
+-- name: FetchCountByMonth :many
+with lm as 
+(
+SELECT
+	to_char(d, 'Month') as n_month
+FROM
+    GENERATE_SERIES(
+        now(),
+        now() - interval '12 months',
+        interval '-1 months'
+    ) AS d
+)
+
+
+select  l.n_month as month,
+count(distinct ci.id)
+from lm as l
+left join complaint_info as ci 
+on l.n_month = to_char(ci.created_at, 'Month')
+group by to_char(ci.created_at, 'Month'),l.n_month
+order by l.n_month desc
+;
+

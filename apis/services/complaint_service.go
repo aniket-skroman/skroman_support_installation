@@ -33,6 +33,8 @@ type ComplaintService interface {
 	UpdateComplaintInfo(req dto.UpdateComplaintRequestDTO) (dto.ComplaintInfoDTO, error)
 	DeleteDeviceFiles(file_id string) error
 	DeleteComplaint(complaint_id string) error
+	ComplaintResolve(complaint_id string) error
+	FetchAllComplaintCounts() dto.AllComplaintsCount
 }
 
 type complaint_service struct {
@@ -109,13 +111,14 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 	args := db.FetchAllComplaintsParams{
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
+		Status: req.TagKey,
 	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		count, err := ser.count_complaints()
+		count, err := ser.count_complaints(req.TagKey)
 
 		if err != nil {
 			helper.SetPaginationData(int(req.PageID), 0)
@@ -197,6 +200,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func() {
 		defer wg.Done()
 		allocate_data, _ := ser.fetch_allocated_emp_details(complaint_id.String())
+		fmt.Println("Allocated DATA : ", allocate_data)
 		result.ComplaintInfo.AllocatedEmpDetailsDTO = allocate_data
 	}()
 
@@ -367,6 +371,36 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 	}, nil
 }
 
+func (ser *complaint_service) ComplaintResolve(complaint_id string) error {
+	complanint_obj, err := helper.ValidateUUID(complaint_id)
+
+	if err != nil {
+		return err
+	}
+
+	args := db.UpdateComplaintStatusParams{
+		ComplaintID: complanint_obj,
+		Status:      "COMPLETE",
+	}
+
+	result, err := ser.complaint_repo.UpdateComplaintStatus(args)
+
+	if err != nil {
+		return err
+	}
+
+	affected_rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected_rows == 0 {
+		return errors.New(utils.UPDATE_FAILED)
+	}
+
+	return nil
+}
+
 // delete a device files
 func (ser *complaint_service) DeleteDeviceFiles(file_id string) error {
 	file_obj_id, err := uuid.Parse(file_id)
@@ -441,8 +475,8 @@ func (ser *complaint_service) remove_local_files(file_path string) {
 	_ = os.Remove(file_path)
 }
 
-func (ser *complaint_service) count_complaints() (int64, error) {
-	result, err := ser.complaint_repo.CountComplaints()
+func (ser *complaint_service) count_complaints(status string) (int64, error) {
+	result, err := ser.complaint_repo.CountComplaints(status)
 
 	if err != nil {
 		return 0, err
@@ -555,10 +589,11 @@ func (ser *complaint_service) fetch_user_info(user_id string) (dto.AllocatedEmpD
 			return dto.AllocatedEmpDetailsDTO{}, err
 		}
 		return dto.AllocatedEmpDetailsDTO{
-			FullName: user_data.UserData.FullName,
-			Email:    user_data.UserData.Email,
-			Contact:  user_data.UserData.Contact,
-			UserType: user_data.UserData.UserType,
+			AllocateUserID: user_data.UserData.ID,
+			FullName:       user_data.UserData.FullName,
+			Email:          user_data.UserData.Email,
+			Contact:        user_data.UserData.Contact,
+			UserType:       user_data.UserData.UserType,
 		}, nil
 	}
 
@@ -578,19 +613,14 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	if err != nil {
 		return dto.AllocatedEmpDetailsDTO{}, err
 	}
-	result := dto.AllocatedEmpDetailsDTO{
-		FullName: user_data.FullName,
-		Email:    user_data.Email,
-		Contact:  user_data.Contact,
-		UserType: user_data.UserType,
-	}
 
+	user_data.ID = allocation_data.ID.String()
 	if !allocation_data.CreatedAt.IsZero() && !allocation_data.UpdatedAt.IsZero() {
-		result.CreatedAt = allocation_data.CreatedAt
-		result.UpdatedAt = allocation_data.UpdatedAt
+		user_data.CreatedAt = allocation_data.CreatedAt
+		user_data.UpdatedAt = allocation_data.UpdatedAt
 	}
 
-	return result, nil
+	return user_data, nil
 }
 
 func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.Complaints, error) {
@@ -601,4 +631,49 @@ func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.Compla
 	}
 
 	return ser.complaint_repo.FetchComplaintById(complaint_obj)
+}
+
+func (ser *complaint_service) FetchAllComplaintCounts() dto.AllComplaintsCount {
+	result := dto.AllComplaintsCount{}
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	// fetch a all counts
+	go func() {
+		defer wg.Done()
+		data, err := ser.fetch_all_complaint_counts()
+		if err == nil {
+			result.AllComplaints = data.AllComplaints
+			result.AllocatedComplaints = data.AllocatedComplaints
+			result.CompletedComplaints = data.ComletedComplaints
+			result.PendingComplaints = data.PendingComplaints
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		month_data, _ := ser.fetch_month_wise_count()
+		result.MonthWiseCounts = make([]dto.MonthWiseCounts, len(month_data))
+		// if month availabel
+		for i, data := range month_data {
+			month := strings.Trim(data.Month, " ")
+			result.MonthWiseCounts[i] = dto.MonthWiseCounts{
+				Month: month,
+				Count: data.Count,
+			}
+		}
+
+	}()
+
+	wg.Wait()
+	return result
+}
+
+func (ser *complaint_service) fetch_all_complaint_counts() (db.CountAllComplaintRow, error) {
+	return ser.complaint_repo.AllComplaintsCount()
+}
+
+func (ser *complaint_service) fetch_month_wise_count() ([]db.FetchCountByMonthRow, error) {
+	return ser.complaint_repo.FetchCountByMonths()
 }

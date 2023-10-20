@@ -22,7 +22,7 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	complaint := router.Group("/api", middleware.AuthorizeJWT(jwt_service))
 	{
 		complaint.POST("/create-complaint", complaint_cont.CreateComplaint)
-		complaint.GET("/fetch-complaints/:page_id/:page_size", complaint_cont.FetchAllComplaints)
+		complaint.GET("/fetch-complaints/:page_id/:page_size/:tag_key", complaint_cont.FetchAllComplaints)
 		complaint.GET("/fetch-complaint", complaint_cont.FetchComplaintDetailByComplaint)
 		complaint.POST("/upload-device-image", complaint_cont.UploadDeviceImage)
 		complaint.POST("/upload-device-video", complaint_cont.UploadDeviceVideo)
@@ -30,6 +30,9 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 		complaint.PUT("/update-complaint", complaint_cont.UpdateComplaintInfo)
 		complaint.DELETE("/delete-device-file/:file_id", complaint_cont.DeleteDeviceFiles)
 		complaint.DELETE("/delete-complaint/:complaint_id", complaint_cont.DeleteComplaint)
+
+		complaint.PUT("/complaint-resolved/:complaint_id", complaint_cont.ComplaintResolve)
+		complaint.GET("/fetch-complaint-counts", complaint_cont.FetchAllComplaintCounts)
 	}
 
 	device_img := router.Group("/api")

@@ -37,8 +37,9 @@ type UpdateComplaintRequestDTO struct {
 }
 
 type PaginationRequestParams struct {
-	PageID   int32 `uri:"page_id"`
-	PageSize int32 `uri:"page_size"`
+	PageID   int32  `uri:"page_id" binding:"required"`
+	PageSize int32  `uri:"page_size" binding:"required"`
+	TagKey   string `uri:"tag_key" binding:"required,oneof=INIT ALLOCATE COMPLETE"`
 }
 
 type ImageRequestDTO struct {
@@ -58,12 +59,27 @@ type ComplaintDeviceImagesDTO struct {
 }
 
 type AllocatedEmpDetailsDTO struct {
-	FullName  string      `json:"full_name,omitempty"`
-	Email     string      `json:"email,omitempty"`
-	Contact   string      `json:"contact,omitempty"`
-	UserType  string      `json:"user_type,omitempty"`
-	CreatedAt interface{} `json:"allocate_date,omitempty"`
-	UpdatedAt interface{} `json:"allocate_modify_date,omitempty"`
+	ID             string      `json:"id"`
+	AllocateUserID string      `json:"allocate_user_id"`
+	FullName       string      `json:"full_name,omitempty"`
+	Email          string      `json:"email,omitempty"`
+	Contact        string      `json:"contact,omitempty"`
+	UserType       string      `json:"user_type,omitempty"`
+	CreatedAt      interface{} `json:"allocate_date,omitempty"`
+	UpdatedAt      interface{} `json:"allocate_modify_date,omitempty"`
+}
+
+type MonthWiseCounts struct {
+	Month string `json:"month"`
+	Count int64  `json:"count"`
+}
+
+type AllComplaintsCount struct {
+	AllComplaints       int64             `json:"all_complaints"`
+	PendingComplaints   int64             `json:"pending_complaints"`
+	CompletedComplaints int64             `json:"completed_complaints"`
+	AllocatedComplaints int64             `json:"allocated_complaints"`
+	MonthWiseCounts     []MonthWiseCounts `json:"month_data"`
 }
 
 type ComplaintInfoByComplaintDTO struct {
