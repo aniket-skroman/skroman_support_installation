@@ -637,7 +637,7 @@ func (ser *complaint_service) FetchAllComplaintCounts() dto.AllComplaintsCount {
 	result := dto.AllComplaintsCount{}
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 
 	// fetch a all counts
 	go func() {
@@ -663,10 +663,17 @@ func (ser *complaint_service) FetchAllComplaintCounts() dto.AllComplaintsCount {
 				Count: data.Count,
 			}
 		}
+	}()
 
+	// fetching emp count
+	go func() {
+		defer wg.Done()
+		count, _ := ser.fetch_emp_count()
+		result.EmpCount = count
 	}()
 
 	wg.Wait()
+
 	return result
 }
 
@@ -676,4 +683,43 @@ func (ser *complaint_service) fetch_all_complaint_counts() (db.CountAllComplaint
 
 func (ser *complaint_service) fetch_month_wise_count() ([]db.FetchCountByMonthRow, error) {
 	return ser.complaint_repo.FetchCountByMonths()
+}
+
+// fetch emp count by calling users service
+func (ser *complaint_service) fetch_emp_count() (int64, error) {
+	// generate auth_token for user id
+	token := ser.jwt_service.GenerateTempToken(utils.TOKEN_ID, "emp")
+	requrl := "http://15.207.19.172:8080/api/emp-count"
+
+	request, _ := http.NewRequest(http.MethodGet, requrl, nil)
+	request.Close = true
+	request.Header.Set("Authorization", token)
+
+	response, err := http.DefaultClient.Do(request)
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			return
+		}
+	}()
+
+	if err != nil {
+		return 0, err
+	}
+
+	if response.StatusCode == http.StatusOK {
+		response_data := struct {
+			Status    bool   `json:"status"`
+			Message   string `json:"message"`
+			Err       string `json:"error"`
+			DataCount int64  `json:"data_count"`
+		}{}
+
+		json.NewDecoder(response.Body).Decode(&response_data)
+
+		return response_data.DataCount, nil
+
+	}
+
+	return 0, nil
 }

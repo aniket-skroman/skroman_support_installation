@@ -79,6 +79,7 @@ type AllComplaintsCount struct {
 	PendingComplaints   int64             `json:"pending_complaints"`
 	CompletedComplaints int64             `json:"completed_complaints"`
 	AllocatedComplaints int64             `json:"allocated_complaints"`
+	EmpCount            int64             `json:"emp_count"`
 	MonthWiseCounts     []MonthWiseCounts `json:"month_data"`
 }
 
