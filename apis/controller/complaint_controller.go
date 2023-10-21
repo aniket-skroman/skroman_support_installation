@@ -169,10 +169,6 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-		if strings.Contains(err.Error(), "completed complaint") {
-			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
@@ -194,13 +190,17 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 
 	err = cont.comp_serv.UploadDeviceImage(tempFile.Name(), complaint_info_id)
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+
 		if uuid.IsInvalidLengthError(err) {
 			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
+		} else if strings.Contains(err.Error(), "completed complaint") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
 		}
-		cont.response = utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusBadRequest, cont.response)
+		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
 
