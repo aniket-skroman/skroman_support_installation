@@ -27,6 +27,7 @@ type ComplaintRepository interface {
 	UpdateComplaintStatus(args db.UpdateComplaintStatusParams) (sql.Result, error)
 	AllComplaintsCount() (db.CountAllComplaintRow, error)
 	FetchCountByMonths() ([]db.FetchCountByMonthRow, error)
+	FetchComplaintStatus(complaint_info_id uuid.UUID) (string, error)
 }
 
 type complaint_repository struct {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
@@ -168,6 +169,10 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
+		if strings.Contains(err.Error(), "completed complaint") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
@@ -228,13 +233,16 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 	err = cont.comp_serv.UploadDeviceVideo(file, handler, complaint_info_id)
 
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
 		if uuid.IsInvalidLengthError(err) {
 			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
+		} else if strings.Contains(err.Error(), "completed complaint") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
 		}
-		response := utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusInternalServerError, response)
+		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
 
@@ -254,12 +262,15 @@ func (cont *complaint_controller) UpdateComplaintInfo(ctx *gin.Context) {
 	result, err := cont.comp_serv.UpdateComplaintInfo(req)
 
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
 		if uuid.IsInvalidLengthError(err) {
 			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
+		} else if strings.Contains(err.Error(), "completed complaint") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
 		}
-		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}

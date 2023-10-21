@@ -179,3 +179,11 @@ func (repo *complaint_repository) FetchCountByMonths() ([]db.FetchCountByMonthRo
 
 	return repo.db.Queries.FetchCountByMonth(ctx)
 }
+
+// fetch a complaint status, if the complaint status is COMPLETE then do not allow to update it
+func (repo *complaint_repository) FetchComplaintStatus(complaint_info_id uuid.UUID) (string, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.ComplaintStatusByComplaintInfoId(ctx, complaint_info_id)
+}

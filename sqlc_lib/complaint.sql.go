@@ -41,6 +41,18 @@ func (q *Queries) AddDeviceImages(ctx context.Context, arg AddDeviceImagesParams
 	return i, err
 }
 
+const complaintStatusByComplaintInfoId = `-- name: ComplaintStatusByComplaintInfoId :one
+select status from complaint_info
+where id = $1
+`
+
+func (q *Queries) ComplaintStatusByComplaintInfoId(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, complaintStatusByComplaintInfoId, id)
+	var status string
+	err := row.Scan(&status)
+	return status, err
+}
+
 const countAllComplaint = `-- name: CountAllComplaint :one
 select 
 (

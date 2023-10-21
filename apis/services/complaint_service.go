@@ -268,6 +268,19 @@ func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info
 		return err
 	}
 
+	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
+	status, err := ser.complaint_repo.FetchComplaintStatus(complaint_obj_id)
+
+	if err != nil {
+		return err
+	}
+
+	if status == "COMPLETE" {
+		// if status is complete then remove the temp file
+		ser.remove_local_files(file_path)
+		return errors.New("completed complaint will not be updated")
+	}
+
 	// upload a image in s3 bucket first
 	s3_connection := connections.NewS3Connection()
 	_, path, err := s3_connection.UploadDeviceImage(file_path)
@@ -304,6 +317,17 @@ func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *mu
 		return err
 	}
 
+	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
+	status, err := ser.complaint_repo.FetchComplaintStatus(complaint_obj_id)
+
+	if err != nil {
+		return err
+	}
+
+	if status == "COMPLETE" {
+		return errors.New("completed complaint will not be updated")
+	}
+
 	// upload a image in s3 bucket first
 	s3_connection := connections.NewS3Connection()
 	path, err := s3_connection.UploadDeviceVideo(file, handler)
@@ -330,6 +354,17 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 
 	if err != nil {
 		return dto.ComplaintInfoDTO{}, err
+	}
+
+	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
+	status, err := ser.complaint_repo.FetchComplaintStatus(complaint_obj_id)
+
+	if err != nil {
+		return dto.ComplaintInfoDTO{}, err
+	}
+
+	if status == "COMPLETE" {
+		return dto.ComplaintInfoDTO{}, errors.New("completed complaint will not be updated")
 	}
 
 	available_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)

@@ -16,7 +16,7 @@ type ClientTimeSlots struct {
 
 type CreateComplaintRequestDTO struct {
 	ClientID            string          `json:"client_id" binding:"required"`
-	DeviceID            string          `json:"device_id" binding:"required"`
+	DeviceID            string          `json:"device_id"`
 	DeviceType          string          `json:"device_type" binding:"required"`
 	DeviceModel         string          `json:"device_model" binding:"required"`
 	ProblemStatement    string          `json:"problem_statement" binding:"required"`
@@ -27,7 +27,7 @@ type CreateComplaintRequestDTO struct {
 
 type UpdateComplaintRequestDTO struct {
 	ComplaintInfoId     string          `json:"complaint_info_id" binding:"required"`
-	DeviceID            string          `json:"device_id" binding:"required"`
+	DeviceID            string          `json:"device_id"`
 	DeviceType          string          `json:"device_type" binding:"required"`
 	DeviceModel         string          `json:"device_model" binding:"required"`
 	ProblemStatement    string          `json:"problem_statement" binding:"required"`
@@ -59,8 +59,8 @@ type ComplaintDeviceImagesDTO struct {
 }
 
 type AllocatedEmpDetailsDTO struct {
-	ID             string      `json:"id"`
-	AllocateUserID string      `json:"allocate_user_id"`
+	ID             string      `json:"id,omitempty"`
+	AllocateUserID string      `json:"allocate_user_id,omitempty"`
 	FullName       string      `json:"full_name,omitempty"`
 	Email          string      `json:"email,omitempty"`
 	Contact        string      `json:"contact,omitempty"`

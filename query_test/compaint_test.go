@@ -318,7 +318,7 @@ func TestFetchImageFromS3(t *testing.T) {
 }
 
 func TestCountComplaint(t *testing.T) {
-	result, err := testQueries.CountComplaints(context.Background())
+	result, err := testQueries.CountComplaints(context.Background(), "INIT")
 
 	require.NoError(t, err)
 
@@ -365,6 +365,15 @@ func TestProxyAPI(t *testing.T) {
 	contain_data := string(response_body)
 	fmt.Println("Contain Data : \n", contain_data)
 	require.NotEmpty(t, contain_data)
+}
+
+func TestCompalintStatusByComplaint(t *testing.T) {
+	complaint_info_id, err := uuid.Parse("73a3a13d-8b65-4481-80c2-3399f8b5a4ab")
+	require.NoError(t, err)
+	result, err := testQueries.ComplaintStatusByComplaintInfoId(context.Background(), complaint_info_id)
+	require.NoError(t, err)
+	fmt.Println("RESULT :", result)
+	require.NotEmpty(t, result)
 }
 
 // ----------------------------------------------   TEST FOR COMPLAINT ALLOCATION -------------------------------------------- //

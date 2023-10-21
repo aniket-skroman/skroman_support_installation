@@ -154,3 +154,7 @@ group by to_char(ci.created_at, 'Month'),l.n_month
 order by l.n_month desc
 ;
 
+
+-- name: ComplaintStatusByComplaintInfoId :one
+select status from complaint_info
+where id = $1;
