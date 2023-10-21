@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
@@ -52,12 +53,15 @@ func (cont *allocation_controller) AllocateComplaint(ctx *gin.Context) {
 	err := cont.allocation_serv.AllocateComplaint(req)
 
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
 		if uuid.IsInvalidLengthError(err) {
 			cont.response = utils.BuildFailedResponse("invalid params has been requested")
 			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
+		} else if strings.Contains(err.Error(), "already allocated") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
 		}
-		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
@@ -88,6 +92,7 @@ func (cont *allocation_controller) UpdateAllocateComplaint(ctx *gin.Context) {
 	err := cont.allocation_serv.UpdateComplaintAllocation(req)
 
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			cont.response = utils.BuildFailedResponse("invalid allocation detect")
 			ctx.JSON(http.StatusConflict, cont.response)
@@ -96,9 +101,10 @@ func (cont *allocation_controller) UpdateAllocateComplaint(ctx *gin.Context) {
 			cont.response = utils.BuildFailedResponse("invalid params has been requested")
 			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
+		} else if strings.Contains(err.Error(), "completed complaint") {
+			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
 		}
-
-		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}

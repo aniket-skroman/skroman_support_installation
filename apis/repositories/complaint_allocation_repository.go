@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis"
@@ -11,9 +12,11 @@ import (
 
 type ComplaintAllocationRepository interface {
 	Init() (context.Context, context.CancelFunc)
-	CreateComplaintAllocation(args db.CreateComplaintAllocationParams) error
-	UpdateComplaintAllocation(args db.UpdateComplaintAllocationParams) error
-	FetchAllocationByComplaintId(complaint_id uuid.UUID) (db.ComplaintAllocations, error)
+	CreateComplaintAllocation(db.CreateComplaintAllocationParams) error
+	UpdateComplaintAllocation(db.UpdateComplaintAllocationParams) error
+	FetchAllocationByComplaintId(uuid.UUID) (db.ComplaintAllocations, error)
+	CheckComplaintStatusBeforeUpdate(uuid.UUID) (sql.Result, error)
+	CheckDuplicateComplaintAllocation(uuid.UUID) (sql.Result, error)
 }
 
 type allocation_repository struct {

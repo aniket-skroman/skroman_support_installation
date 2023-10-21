@@ -8,9 +8,52 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const checkComplaintStatusBeforeUpdate = `-- name: CheckComplaintStatusBeforeUpdate :execresult
+select ca.id, ca.complaint_id, allocated_to, allocated_by, ca.created_at, ca.updated_at, ci.id, ci.complaint_id, device_id, problem_statement, problem_category, client_available, status, ci.created_at, ci.updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_allocations as ca 
+join complaint_info as ci 
+on ca.complaint_id = ci.complaint_id
+where ca.id = $1 and ci.status <> 'COMPLETE'
+`
+
+type CheckComplaintStatusBeforeUpdateRow struct {
+	ID                      uuid.UUID      `json:"id"`
+	ComplaintID             uuid.UUID      `json:"complaint_id"`
+	AllocatedTo             uuid.UUID      `json:"allocated_to"`
+	AllocatedBy             uuid.UUID      `json:"allocated_by"`
+	CreatedAt               time.Time      `json:"created_at"`
+	UpdatedAt               time.Time      `json:"updated_at"`
+	ID_2                    uuid.UUID      `json:"id_2"`
+	ComplaintID_2           uuid.UUID      `json:"complaint_id_2"`
+	DeviceID                string         `json:"device_id"`
+	ProblemStatement        string         `json:"problem_statement"`
+	ProblemCategory         sql.NullString `json:"problem_category"`
+	ClientAvailable         time.Time      `json:"client_available"`
+	Status                  string         `json:"status"`
+	CreatedAt_2             time.Time      `json:"created_at_2"`
+	UpdatedAt_2             time.Time      `json:"updated_at_2"`
+	DeviceType              sql.NullString `json:"device_type"`
+	DeviceModel             sql.NullString `json:"device_model"`
+	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
+	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+}
+
+func (q *Queries) CheckComplaintStatusBeforeUpdate(ctx context.Context, id uuid.UUID) (sql.Result, error) {
+	return q.db.ExecContext(ctx, checkComplaintStatusBeforeUpdate, id)
+}
+
+const checkDuplicateComplaintAllocation = `-- name: CheckDuplicateComplaintAllocation :execresult
+select id, complaint_id, allocated_to, allocated_by, created_at, updated_at from complaint_allocations
+where complaint_id = $1
+`
+
+func (q *Queries) CheckDuplicateComplaintAllocation(ctx context.Context, complaintID uuid.UUID) (sql.Result, error) {
+	return q.db.ExecContext(ctx, checkDuplicateComplaintAllocation, complaintID)
+}
 
 const createComplaintAllocation = `-- name: CreateComplaintAllocation :one
 insert into complaint_allocations (

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"errors"
 
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
@@ -65,4 +66,20 @@ func (repo *allocation_repository) FetchAllocationByComplaintId(complaint_id uui
 	defer cancel()
 
 	return repo.db.Queries.FetchComplaintAllocationByComplaint(ctx, complaint_id)
+}
+
+// check for duplicate complaint allocation
+func (repo *allocation_repository) CheckDuplicateComplaintAllocation(complaint_id uuid.UUID) (sql.Result, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.CheckDuplicateComplaintAllocation(ctx, complaint_id)
+}
+
+// check complaint status before allocate emp or update emp, complaint status should be init/allocate should not be complete
+func (repo *allocation_repository) CheckComplaintStatusBeforeUpdate(complaint_id uuid.UUID) (sql.Result, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.CheckComplaintStatusBeforeUpdate(ctx, complaint_id)
 }

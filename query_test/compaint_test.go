@@ -446,3 +446,32 @@ func TestMonthWiseData(t *testing.T) {
 		fmt.Println("Generated Row :", r.Month, r.Count)
 	}
 }
+
+// try to change a allocate emp after complaint is complete
+func TestUpdateComplaintAllocationAfterComplate(t *testing.T) {
+	complaint_id, err := uuid.Parse("6ee0a9c7-bd08-4b29-b445-c5f614c05b47")
+	require.NoError(t, err)
+
+	result, err := testQueries.CheckComplaintStatusBeforeUpdate(context.Background(), complaint_id)
+	require.NoError(t, err)
+
+	affected_row, err := result.RowsAffected()
+	require.NoError(t, err)
+	fmt.Println("AFFECTED ROWS : ", affected_row)
+
+}
+
+func TestCheckDuplicateComplaintAllocation(t *testing.T) {
+	complaint_id, err := uuid.Parse("6b4fbb24-67c6-4f83-88b9-04f5b893db51")
+	require.NoError(t, err)
+
+	result, err := testQueries.CheckDuplicateComplaintAllocation(context.Background(), complaint_id)
+
+	require.NoError(t, err)
+
+	afftected_rows, err := result.RowsAffected()
+	require.NoError(t, err)
+
+	fmt.Println("AFFECTED ROWS : ", afftected_rows)
+	require.NotZero(t, afftected_rows)
+}

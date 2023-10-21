@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	"github.com/aniket-skroman/skroman_support_installation/apis/repositories"
@@ -40,6 +42,22 @@ func (ser *allocation_service) AllocateComplaint(req dto.CreateAllocationRequest
 		return err
 	}
 
+	// check this complaint should not allocated before
+	result, err := ser.allocation_repo.CheckDuplicateComplaintAllocation(complaint_obj)
+
+	if err != nil {
+		return err
+	}
+
+	affected_rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected_rows != 0 {
+		return errors.New("this complaint is already allocated to someone")
+	}
+
 	args := db.CreateComplaintAllocationParams{
 		ComplaintID: complaint_obj,
 		AllocatedBy: allocate_by,
@@ -65,6 +83,22 @@ func (ser *allocation_service) UpdateComplaintAllocation(req dto.UpdateAllocateC
 	allocate_by, err := helper.ValidateUUID(req.AllocateBy)
 	if err != nil {
 		return err
+	}
+
+	// check the complaint status, it should be init/allocate should not be complete
+	result, err := ser.allocation_repo.CheckComplaintStatusBeforeUpdate(id)
+
+	if err != nil {
+		return err
+	}
+
+	affected_rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected_rows == 0 {
+		return errors.New("completed complaint will not be updated")
 	}
 
 	args := db.UpdateComplaintAllocationParams{

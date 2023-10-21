@@ -22,3 +22,13 @@ where complaint_id = $1;
 -- name: DeleteComplaintAllcation :execresult
 delete from complaint_allocations
 where complaint_id = $1;
+
+-- name: CheckComplaintStatusBeforeUpdate :execresult
+select * from complaint_allocations as ca 
+join complaint_info as ci 
+on ca.complaint_id = ci.complaint_id
+where ca.id = $1 and ci.status <> 'COMPLETE';
+
+-- name: CheckDuplicateComplaintAllocation :execresult
+select * from complaint_allocations
+where complaint_id = $1;
