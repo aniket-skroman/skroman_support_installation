@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
+	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/connections"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
@@ -49,7 +50,7 @@ func (cont *complaint_controller) CreateComplaint(ctx *gin.Context) {
 	var req dto.CreateComplaintRequestDTO
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -223,12 +224,6 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
-
-	// if ctx.Request.ContentLength > 5*1024*1024 {
-	// 	cont.response = utils.BuildFailedResponse("image should be less that 5 MB")
-	// 	ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
-	// 	return
-	// }
 
 	err = cont.comp_serv.UploadDeviceVideo(file, handler, complaint_info_id)
 

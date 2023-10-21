@@ -23,6 +23,7 @@ type CreateComplaintRequestDTO struct {
 	ProblemCategory     string          `json:"problem_category" binding:"required"`
 	ClientAvailableDate string          `json:"client_available_date" binding:"required"`
 	ClientTimeSlots     ClientTimeSlots `json:"available_time_slots" binding:"required"`
+	ComplaintAddress    string          `json:"complaint_address" binding:"required"`
 }
 
 type UpdateComplaintRequestDTO struct {
@@ -116,6 +117,7 @@ type ComplaintInfoDTO struct {
 	ProblemCategory     string    `json:"problem_category"`
 	ClientAvailableDate string    `json:"client_available_date" binding:"required"`
 	ClientTimeSlots     string    `json:"available_time_slots" binding:"required"`
+	ComplaintAddress    string    `json:"complaint_address"`
 	Status              string    `json:"status"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
@@ -135,6 +137,7 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 			ProblemCategory:     module_data[0].ProblemCategory.String,
 			ClientAvailableDate: a_date,
 			ClientTimeSlots:     module_data[0].ClientAvailableTimeSlot.String,
+			ComplaintAddress:    module_data[0].ComplaintAddress.String,
 			Status:              module_data[0].Status,
 			CreatedAt:           module_data[0].CreatedAt,
 			UpdatedAt:           module_data[0].UpdatedAt,
@@ -161,6 +164,7 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 			UpdatedAt:           module_data[i].UpdatedAt,
 			DeviceType:          module_data[i].DeviceType.String,
 			DeviceModel:         module_data[i].DeviceModel.String,
+			ComplaintAddress:    module_data[i].ComplaintAddress.String,
 		}
 	}
 

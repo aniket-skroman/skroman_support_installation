@@ -90,7 +90,7 @@ func (q *Queries) CountAllComplaint(ctx context.Context) (CountAllComplaintRow, 
 }
 
 const countComplaints = `-- name: CountComplaints :execresult
-select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_info
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
 where status = $1
 `
 
@@ -136,10 +136,11 @@ insert into complaint_info (
     client_available,
     client_available_date,
     client_available_time_slot,
+    complaint_address,
     status
 ) values (
-    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-) returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot
+    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+) returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address
 `
 
 type CreateComplaintInfoParams struct {
@@ -152,6 +153,7 @@ type CreateComplaintInfoParams struct {
 	ClientAvailable         time.Time      `json:"client_available"`
 	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
 	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
 	Status                  string         `json:"status"`
 }
 
@@ -166,6 +168,7 @@ func (q *Queries) CreateComplaintInfo(ctx context.Context, arg CreateComplaintIn
 		arg.ClientAvailable,
 		arg.ClientAvailableDate,
 		arg.ClientAvailableTimeSlot,
+		arg.ComplaintAddress,
 		arg.Status,
 	)
 	var i ComplaintInfo
@@ -183,6 +186,7 @@ func (q *Queries) CreateComplaintInfo(ctx context.Context, arg CreateComplaintIn
 		&i.DeviceModel,
 		&i.ClientAvailableDate,
 		&i.ClientAvailableTimeSlot,
+		&i.ComplaintAddress,
 	)
 	return i, err
 }
@@ -215,7 +219,7 @@ func (q *Queries) DeleteDeviceFiles(ctx context.Context, id uuid.UUID) (sql.Resu
 }
 
 const fetchAllComplaints = `-- name: FetchAllComplaints :many
-select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_info
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
 where status =$3
 order by created_at desc 
 limit $1
@@ -251,6 +255,7 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 			&i.DeviceModel,
 			&i.ClientAvailableDate,
 			&i.ClientAvailableTimeSlot,
+			&i.ComplaintAddress,
 		); err != nil {
 			return nil, err
 		}
@@ -285,7 +290,8 @@ func (q *Queries) FetchComplaintByComplaintId(ctx context.Context, id uuid.UUID)
 
 const fetchComplaintDetailByComplaint = `-- name: FetchComplaintDetailByComplaint :one
 select c.created_by as created_by,
-c.client_id as client, ci.device_id as device_id,
+(case when c.client_id is null then 'NOT AVAILABEL' else c.client_id end) as client,
+ci.device_id as device_id,
 ci.id as complaint_info_id,
 ci.problem_statement as problem_statement,
 ci.problem_category as problem_category,
@@ -302,7 +308,7 @@ where c.id = $1
 
 type FetchComplaintDetailByComplaintRow struct {
 	CreatedBy               uuid.UUID      `json:"created_by"`
-	Client                  string         `json:"client"`
+	Client                  interface{}    `json:"client"`
 	DeviceID                string         `json:"device_id"`
 	ComplaintInfoID         uuid.UUID      `json:"complaint_info_id"`
 	ProblemStatement        string         `json:"problem_statement"`
@@ -453,7 +459,7 @@ client_available_date=$7,
 client_available_time_slot=$8,
 updated_at = CURRENT_TIMESTAMP
 where id = $1
-returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot
+returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address
 `
 
 type UpdateComplaintInfoParams struct {
@@ -493,6 +499,7 @@ func (q *Queries) UpdateComplaintInfo(ctx context.Context, arg UpdateComplaintIn
 		&i.DeviceModel,
 		&i.ClientAvailableDate,
 		&i.ClientAvailableTimeSlot,
+		&i.ComplaintAddress,
 	)
 	return i, err
 }

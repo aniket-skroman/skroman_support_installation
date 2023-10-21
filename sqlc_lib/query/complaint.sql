@@ -17,9 +17,10 @@ insert into complaint_info (
     client_available,
     client_available_date,
     client_available_time_slot,
+    complaint_address,
     status
 ) values (
-    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
 ) returning *;
 
 -- name: AddDeviceImages :one
@@ -54,7 +55,8 @@ insert into device_images(
 
 -- name: FetchComplaintDetailByComplaint :one
 select c.created_by as created_by,
-c.client_id as client, ci.device_id as device_id,
+(case when c.client_id is null then 'NOT AVAILABEL' else c.client_id end) as client,
+ci.device_id as device_id,
 ci.id as complaint_info_id,
 ci.problem_statement as problem_statement,
 ci.problem_category as problem_category,

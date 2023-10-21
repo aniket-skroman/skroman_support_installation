@@ -5,7 +5,7 @@ liveserver:
 	nodemon --exec go run application.go --signal SIGTERM
 
 migratecreate:
-	migrate create -ext sql -dir db/migrations/ -seq add_field_check_complaint_allocate
+	migrate create -ext sql -dir db/migrations/ -seq add_field_complaint_info
 
 migrateup:
 	migrate -path db/migrations -database "postgresql://postgres:root@localhost:5432/postgres?sslmode=disable" --verbose up

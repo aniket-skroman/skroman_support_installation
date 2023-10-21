@@ -34,6 +34,7 @@ type ComplaintInfo struct {
 	DeviceModel             sql.NullString `json:"device_model"`
 	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
 	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
 }
 
 type Complaints struct {

@@ -79,6 +79,7 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 		ProblemStatement: req.ProblemStatement,
 		ProblemCategory:  sql.NullString{String: req.ProblemCategory, Valid: true},
 		ClientAvailable:  time.Now(),
+		ComplaintAddress: sql.NullString{String: req.ComplaintAddress, Valid: true},
 		Status:           "INIT",
 		ClientAvailableDate: sql.NullTime{
 			Time:  avalibale_date,
@@ -153,6 +154,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	complaint_info, err := ser.complaint_repo.FetchComplaintDetailByComplaint(complaint_id)
 
 	if err != nil {
+		fmt.Println("RETURNING FROM :", err)
 		return dto.ComplaintInfoByComplaintDTO{}, err
 	}
 
@@ -164,13 +166,13 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func(client_id string) {
 		defer wg.Done()
 
-		client_info, err := ser.fetch_client_info(complaint_info.Client)
+		client_info, err := ser.fetch_client_info(complaint_info.Client.(string))
 		if err != nil {
 			result.ClientInfo = proxycalls.ClientInfoDTO{}
 		} else {
 			result.ClientInfo = client_info.Result
 		}
-	}(complaint_info.Client)
+	}(complaint_info.Client.(string))
 
 	// fetch all device images and videos for complaint
 	go func(complaint_info_id string) {
@@ -209,7 +211,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	result.ComplaintInfo = dto.ComplaintFullDetailsDTO{
 		Id:                  complaint_info.ComplaintInfoID,
 		ComplaintId:         complaint_id,
-		Client:              complaint_info.Client,
+		Client:              complaint_info.Client.(string),
 		DeviceID:            complaint_info.DeviceID,
 		DeviceModel:         complaint_info.DeviceModel.String,
 		DeviceType:          complaint_info.DeviceType.String,

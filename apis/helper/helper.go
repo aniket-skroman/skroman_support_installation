@@ -2,6 +2,7 @@ package helper
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/go-playground/validator/v10"
@@ -42,6 +43,20 @@ func Error_handler(err error) []ApiError {
 	}
 	return nil
 }
+
+func Handle_required_param_error(err error) string {
+	var ve validator.ValidationErrors
+	var err_msg string
+	if errors.As(err, &ve) {
+		for _, fe := range ve {
+			err_msg = fmt.Sprintf("%v - %v", fe.Field(), msgForTag(fe.Tag()))
+			break
+		}
+	}
+
+	return err_msg
+}
+
 func msgForTag(tag string) string {
 	switch tag {
 	case "required":

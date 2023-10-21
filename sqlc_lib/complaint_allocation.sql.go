@@ -8,13 +8,12 @@ package db
 import (
 	"context"
 	"database/sql"
-	"time"
-
+"time"
 	"github.com/google/uuid"
 )
 
 const checkComplaintStatusBeforeUpdate = `-- name: CheckComplaintStatusBeforeUpdate :execresult
-select ca.id, ca.complaint_id, allocated_to, allocated_by, ca.created_at, ca.updated_at, ci.id, ci.complaint_id, device_id, problem_statement, problem_category, client_available, status, ci.created_at, ci.updated_at, device_type, device_model, client_available_date, client_available_time_slot from complaint_allocations as ca 
+select ca.id, ca.complaint_id, allocated_to, allocated_by, ca.created_at, ca.updated_at, ci.id, ci.complaint_id, device_id, problem_statement, problem_category, client_available, status, ci.created_at, ci.updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_allocations as ca 
 join complaint_info as ci 
 on ca.complaint_id = ci.complaint_id
 where ca.id = $1 and ci.status <> 'COMPLETE'
@@ -40,6 +39,7 @@ type CheckComplaintStatusBeforeUpdateRow struct {
 	DeviceModel             sql.NullString `json:"device_model"`
 	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
 	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
 }
 
 func (q *Queries) CheckComplaintStatusBeforeUpdate(ctx context.Context, id uuid.UUID) (sql.Result, error) {
