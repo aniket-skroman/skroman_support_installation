@@ -171,6 +171,23 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 	return complaints
 }
 
+// ----------------------------------------- CLIENT REGISTRATION  ------------------------------------------------ //
+type ClientRegistration struct {
+	UserName    string `json:"user_name" binding:"required"`
+	Email       string `json:"email" binding:"required"`
+	Contact     string `json:"contact" binding:"required"`
+	AddressLine string `json:"address" binding:"required"`
+	City        string `json:"city" binding:"required"`
+	State       string `json:"state" binding:"required"`
+	Pincode     string `json:"pin_code" binding:"required"`
+}
+
+type FetchComplaintsByClientRequestDTO struct {
+	ClientId string `uri:"client_id"`
+	PageID   int32  `uri:"page_id" binding:"required"`
+	PageSize int32  `uri:"page_size" binding:"required"`
+}
+
 // ------------------------------------------ COMPLAINT ALLOCATIONS ----------------------------------------------- //
 type CreateAllocationRequestDTO struct {
 	ComplaintId string `json:"complaint_id" binding:"required"`

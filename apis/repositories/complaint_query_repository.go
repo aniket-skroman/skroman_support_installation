@@ -187,3 +187,20 @@ func (repo *complaint_repository) FetchComplaintStatus(complaint_info_id uuid.UU
 
 	return repo.db.Queries.ComplaintStatusByComplaintInfoId(ctx, complaint_info_id)
 }
+
+// fetch complaints by client
+func (repo *complaint_repository) FetchComplaintsByClient(args db.FetchComplaintsByClientParams) ([]db.FetchComplaintsByClientRow, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchComplaintsByClient(ctx, args)
+
+}
+
+// count the complaints by client
+func (repo *complaint_repository) CountComplaintByClient(client_id string) (int64, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.CountComplaintByClient(ctx, client_id)
+}

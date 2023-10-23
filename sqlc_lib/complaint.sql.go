@@ -89,6 +89,21 @@ func (q *Queries) CountAllComplaint(ctx context.Context) (CountAllComplaintRow, 
 	return i, err
 }
 
+const countComplaintByClient = `-- name: CountComplaintByClient :one
+select count(*)
+from complaints as c 
+join complaint_info as ci 
+on c.id = ci.complaint_id
+where c.client_id = $1
+`
+
+func (q *Queries) CountComplaintByClient(ctx context.Context, clientID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countComplaintByClient, clientID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countComplaints = `-- name: CountComplaints :execresult
 select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
 where status = $1
@@ -341,6 +356,87 @@ func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.U
 		&i.ClientAvailableTimeSlot,
 	)
 	return i, err
+}
+
+const fetchComplaintsByClient = `-- name: FetchComplaintsByClient :many
+select c.id, client_id, created_by, c.created_at, c.updated_at, ci.id, complaint_id, device_id, problem_statement, problem_category, client_available, status, ci.created_at, ci.updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address
+from complaints as c 
+join complaint_info as ci 
+on c.id = ci.complaint_id
+where c.client_id = $1
+limit $2
+offset $3
+`
+
+type FetchComplaintsByClientParams struct {
+	ClientID string `json:"client_id"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type FetchComplaintsByClientRow struct {
+	ID                      uuid.UUID      `json:"id"`
+	ClientID                string         `json:"client_id"`
+	CreatedBy               uuid.UUID      `json:"created_by"`
+	CreatedAt               time.Time      `json:"created_at"`
+	UpdatedAt               time.Time      `json:"updated_at"`
+	ID_2                    uuid.UUID      `json:"id_2"`
+	ComplaintID             uuid.UUID      `json:"complaint_id"`
+	DeviceID                string         `json:"device_id"`
+	ProblemStatement        string         `json:"problem_statement"`
+	ProblemCategory         sql.NullString `json:"problem_category"`
+	ClientAvailable         time.Time      `json:"client_available"`
+	Status                  string         `json:"status"`
+	CreatedAt_2             time.Time      `json:"created_at_2"`
+	UpdatedAt_2             time.Time      `json:"updated_at_2"`
+	DeviceType              sql.NullString `json:"device_type"`
+	DeviceModel             sql.NullString `json:"device_model"`
+	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
+	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
+}
+
+func (q *Queries) FetchComplaintsByClient(ctx context.Context, arg FetchComplaintsByClientParams) ([]FetchComplaintsByClientRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchComplaintsByClient, arg.ClientID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FetchComplaintsByClientRow{}
+	for rows.Next() {
+		var i FetchComplaintsByClientRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClientID,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ID_2,
+			&i.ComplaintID,
+			&i.DeviceID,
+			&i.ProblemStatement,
+			&i.ProblemCategory,
+			&i.ClientAvailable,
+			&i.Status,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
+			&i.DeviceType,
+			&i.DeviceModel,
+			&i.ClientAvailableDate,
+			&i.ClientAvailableTimeSlot,
+			&i.ComplaintAddress,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fetchCountByMonth = `-- name: FetchCountByMonth :many

@@ -28,6 +28,8 @@ type ComplaintRepository interface {
 	AllComplaintsCount() (db.CountAllComplaintRow, error)
 	FetchCountByMonths() ([]db.FetchCountByMonthRow, error)
 	FetchComplaintStatus(complaint_info_id uuid.UUID) (string, error)
+	FetchComplaintsByClient(args db.FetchComplaintsByClientParams) ([]db.FetchComplaintsByClientRow, error)
+	CountComplaintByClient(client_id string) (int64, error)
 }
 
 type complaint_repository struct {

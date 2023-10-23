@@ -35,6 +35,12 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 		complaint.GET("/fetch-complaint-counts", complaint_cont.FetchAllComplaintCounts)
 	}
 
+	client := router.Group("/api", middleware.AuthorizeJWT(jwt_service))
+	{
+		client.POST("/client-registraion", complaint_cont.ClientRegistration)
+		client.GET("/client-complaints/:client_id/:page_id/:page_size", complaint_cont.FetchComplaintsByClient)
+	}
+
 	device_img := router.Group("/api")
 	{
 		device_img.GET("/device-file/:directory/:image_path", complaint_cont.FetchDeviceImageURL)

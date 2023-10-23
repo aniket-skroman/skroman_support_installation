@@ -35,6 +35,8 @@ type ComplaintService interface {
 	DeleteComplaint(complaint_id string) error
 	ComplaintResolve(complaint_id string) error
 	FetchAllComplaintCounts() dto.AllComplaintsCount
+	ClientRegistration(req dto.ClientRegistration) error
+	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error)
 }
 
 type complaint_service struct {
@@ -202,7 +204,6 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func() {
 		defer wg.Done()
 		allocate_data, _ := ser.fetch_allocated_emp_details(complaint_id.String())
-		fmt.Println("Allocated DATA : ", allocate_data)
 		result.ComplaintInfo.AllocatedEmpDetailsDTO = allocate_data
 	}()
 
@@ -508,6 +509,52 @@ func (ser *complaint_service) DeleteComplaint(complaint_id string) error {
 	return nil
 }
 
+// client registartion by automation server
+func (ser *complaint_service) ClientRegistration(req dto.ClientRegistration) error {
+	reqUrl := "userapi/user-registration"
+	req_body := proxycalls.ClientRegistration{
+		UserName:     req.UserName,
+		EmailID:      req.Email,
+		MobileNumber: req.Contact,
+		Password:     "skroman123",
+		Address1:     req.AddressLine,
+		City:         req.City,
+		State:        req.State,
+		PinCode:      req.Pincode,
+	}
+
+	request_body, err := json.Marshal(&req_body)
+
+	if err != nil {
+		return err
+	}
+
+	api_call := proxycalls.ProxyCalls{}
+	api_call.ReqEndpoint = reqUrl
+	api_call.RequestBody = request_body
+	api_call.RequestMethod = http.MethodPost
+
+	response, err := api_call.MakeRequestWithBody()
+
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode == http.StatusAccepted || response.StatusCode == http.StatusOK {
+		body_data := struct {
+			Msg          string `json:"msg"`
+			UserID       string `json:"userId"`
+			EmailID      string `json:"emailId"`
+			MobileNumber string `json:"mobileNumber"`
+		}{}
+
+		err := json.NewDecoder(response.Body).Decode(&body_data)
+		return err
+	}
+
+	return errors.New("faild to created user account")
+}
+
 func (ser *complaint_service) remove_local_files(file_path string) {
 	_ = os.Remove(file_path)
 }
@@ -759,4 +806,55 @@ func (ser *complaint_service) fetch_emp_count() (int64, error) {
 	}
 
 	return 0, nil
+}
+
+// fetch complaints by clients
+func (ser *complaint_service) FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error) {
+	args := db.FetchComplaintsByClientParams{
+		ClientID: req.ClientId,
+		Limit:    req.PageSize,
+		Offset:   (req.PageID - 1) * req.PageSize,
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		count, _ := ser.complaint_repo.CountComplaintByClient(req.ClientId)
+		helper.SetPaginationData(int(req.PageID), count)
+	}()
+
+	complaints, err := ser.complaint_repo.FetchComplaintsByClient(args)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(complaints) == 0 {
+		return nil, sql.ErrNoRows
+	}
+	wg.Wait()
+
+	result := make([]dto.ComplaintInfoDTO, len(complaints))
+
+	for i, data := range complaints {
+		a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
+		result[i] = dto.ComplaintInfoDTO{
+			ID:                  data.ID_2,
+			ComplaintID:         data.ID,
+			DeviceID:            data.DeviceID,
+			ProblemStatement:    data.ProblemStatement,
+			ProblemCategory:     data.ProblemCategory.String,
+			ClientAvailableDate: a_date,
+			ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+			ComplaintAddress:    data.ComplaintAddress.String,
+			Status:              data.Status,
+			CreatedAt:           data.CreatedAt,
+			UpdatedAt:           data.UpdatedAt,
+			DeviceType:          data.DeviceType.String,
+			DeviceModel:         data.DeviceModel.String,
+		}
+	}
+	return result, nil
 }

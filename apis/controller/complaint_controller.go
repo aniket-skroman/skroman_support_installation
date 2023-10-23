@@ -32,6 +32,9 @@ type ComplaintController interface {
 	DeleteComplaint(ctx *gin.Context)
 	ComplaintResolve(ctx *gin.Context)
 	FetchAllComplaintCounts(ctx *gin.Context)
+	FetchComplaintsByClient(ctx *gin.Context)
+
+	ClientRegistration(*gin.Context)
 }
 
 type complaint_controller struct {
@@ -236,6 +239,10 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 		} else if strings.Contains(err.Error(), "completed complaint") {
 			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
 			return
+		} else if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("complaint not found to upload video")
+			ctx.JSON(http.StatusNotFound, cont.response)
+			return
 		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
@@ -383,4 +390,52 @@ func (cont *complaint_controller) FetchAllComplaintCounts(ctx *gin.Context) {
 
 	cont.response = utils.BuildSuccessResponse(utils.FETCHED_SUCCESS, utils.COMPLAINT_DATA, result)
 	ctx.JSON(http.StatusOK, result)
+}
+
+func (cont *complaint_controller) ClientRegistration(ctx *gin.Context) {
+	var req dto.ClientRegistration
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	err := cont.comp_serv.ClientRegistration(req)
+
+	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildSuccessResponse(utils.USER_REGISTRATION_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
+	ctx.JSON(http.StatusAccepted, cont.response)
+}
+
+func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
+	var req dto.FetchComplaintsByClientRequestDTO
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	complaint_info, err := cont.comp_serv.FetchComplaintsByClient(req)
+
+	if err != nil {
+
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("complaints not found")
+			ctx.JSON(http.StatusNotFound, cont.response)
+			return
+		}
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+
+	cont.response = utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
+	ctx.JSON(http.StatusOK, cont.response)
 }

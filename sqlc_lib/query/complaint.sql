@@ -160,3 +160,21 @@ order by l.n_month desc
 -- name: ComplaintStatusByComplaintInfoId :one
 select status from complaint_info
 where id = $1;
+
+
+-- name: FetchComplaintsByClient :many
+select *
+from complaints as c 
+join complaint_info as ci 
+on c.id = ci.complaint_id
+where c.client_id = $1
+limit $2
+offset $3
+;
+
+-- name: CountComplaintByClient :one
+select count(*)
+from complaints as c 
+join complaint_info as ci 
+on c.id = ci.complaint_id
+where c.client_id = $1;

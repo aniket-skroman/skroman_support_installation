@@ -18,3 +18,14 @@ type ClientByIdResponse struct {
 	Msg    string        `json:"msg"`
 	Result ClientInfoDTO `json:"result"`
 }
+
+type ClientRegistration struct {
+	UserName     string `json:"userName"`
+	EmailID      string `json:"emailId"`
+	MobileNumber string `json:"mobileNumber"`
+	Password     string `json:"password"`
+	Address1     string `json:"address1"`
+	City         string `json:"city"`
+	State        string `json:"state"`
+	PinCode      string `json:"pinCode"`
+}

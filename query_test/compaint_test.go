@@ -475,3 +475,23 @@ func TestCheckDuplicateComplaintAllocation(t *testing.T) {
 	fmt.Println("AFFECTED ROWS : ", afftected_rows)
 	require.NotZero(t, afftected_rows)
 }
+
+// fetch complaints by client
+func TestFetchComplaintsByClients(t *testing.T) {
+
+	count, err := testQueries.CountComplaintByClient(context.Background(), "User_id-iYfdKPhPS")
+	require.NoError(t, err)
+	fmt.Println("Count Complaint : ", count)
+	args := db.FetchComplaintsByClientParams{
+		ClientID: "User_id-iYfdKPhPS",
+		Limit:    20,
+		Offset:   1,
+	}
+
+	result, err := testQueries.FetchComplaintsByClient(context.Background(), args)
+	require.NoError(t, err)
+	for i := range result {
+		fmt.Printf("%v+\n", result[i])
+	}
+	require.NotZero(t, result)
+}

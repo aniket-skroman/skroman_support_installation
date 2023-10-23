@@ -2,7 +2,6 @@ package connections
 
 import (
 	"bytes"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -107,13 +106,11 @@ func (s3_bucket *s3_connection) UploadDeviceVideo(file multipart.File, handler *
 
 	file_name = "video/" + file_name
 
-	result, err := uploader.Upload(&s3manager.UploadInput{
+	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(s3_bucket.GetBucketName()), // Bucket to be used
 		Key:    aws.String(file_name),                 // Name of the file to be saved
 		Body:   file,                                  // File
 	})
-
-	fmt.Println("Video file upload result : ", result)
 
 	return file_name, err
 }
