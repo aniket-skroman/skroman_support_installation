@@ -84,6 +84,7 @@ problem_statement=$5,
 problem_category=$6,
 client_available_date=$7, 
 client_available_time_slot=$8,
+complaint_address=$9,
 updated_at = CURRENT_TIMESTAMP
 where id = $1
 returning *;

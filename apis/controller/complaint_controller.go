@@ -256,7 +256,7 @@ func (cont *complaint_controller) UpdateComplaintInfo(ctx *gin.Context) {
 	var req dto.UpdateComplaintRequestDTO
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}

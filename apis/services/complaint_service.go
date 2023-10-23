@@ -385,6 +385,7 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 		ProblemCategory:         sql.NullString{String: req.ProblemCategory, Valid: true},
 		ClientAvailableDate:     sql.NullTime{Time: available_date, Valid: true},
 		ClientAvailableTimeSlot: sql.NullString{String: req.ClientTimeSlots.From + "-" + req.ClientTimeSlots.To, Valid: true},
+		ComplaintAddress:        sql.NullString{String: req.ComplaintAddress, Valid: true},
 	}
 
 	result, err := ser.complaint_repo.UpdateComplaintInfo(args)
@@ -404,6 +405,7 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 		ClientAvailableDate: available_date.String(),
 		Status:              result.Status,
 		ClientTimeSlots:     result.ClientAvailableTimeSlot.String,
+		ComplaintAddress:    result.ComplaintAddress.String,
 		CreatedAt:           result.CreatedAt,
 		UpdatedAt:           result.UpdatedAt,
 	}, nil

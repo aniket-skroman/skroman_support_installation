@@ -554,6 +554,7 @@ problem_statement=$5,
 problem_category=$6,
 client_available_date=$7, 
 client_available_time_slot=$8,
+complaint_address=$9,
 updated_at = CURRENT_TIMESTAMP
 where id = $1
 returning id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address
@@ -568,6 +569,7 @@ type UpdateComplaintInfoParams struct {
 	ProblemCategory         sql.NullString `json:"problem_category"`
 	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
 	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
 }
 
 func (q *Queries) UpdateComplaintInfo(ctx context.Context, arg UpdateComplaintInfoParams) (ComplaintInfo, error) {
@@ -580,6 +582,7 @@ func (q *Queries) UpdateComplaintInfo(ctx context.Context, arg UpdateComplaintIn
 		arg.ProblemCategory,
 		arg.ClientAvailableDate,
 		arg.ClientAvailableTimeSlot,
+		arg.ComplaintAddress,
 	)
 	var i ComplaintInfo
 	err := row.Scan(
