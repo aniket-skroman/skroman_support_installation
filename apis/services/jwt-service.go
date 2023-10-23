@@ -80,7 +80,6 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 		json.Unmarshal(byteArr, &tokenData)
 
 		d := time.Since(tokenData.CreatedAt)
-		fmt.Println("Token Hours : ", d.Hours(), tokenData.CreatedAt)
 		if d.Hours() > 24 {
 			return nil, errors.New("token has been expired")
 		}

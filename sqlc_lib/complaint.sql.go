@@ -314,7 +314,8 @@ ci.status as complaint_status,
 ci.device_model as device_model, ci.device_type as device_type,
 ci.created_at as complaint_raised_at, ci.updated_at as last_modified_at,
 ci.client_available_date as client_available_date,
-ci.client_available_time_slot as client_available_time_slot
+ci.client_available_time_slot as client_available_time_slot,
+ci.complaint_address
 from complaints c
 inner join complaint_info ci 
 on c.id = ci.complaint_id
@@ -335,6 +336,7 @@ type FetchComplaintDetailByComplaintRow struct {
 	LastModifiedAt          time.Time      `json:"last_modified_at"`
 	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
 	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
 }
 
 func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.UUID) (FetchComplaintDetailByComplaintRow, error) {
@@ -354,6 +356,7 @@ func (q *Queries) FetchComplaintDetailByComplaint(ctx context.Context, id uuid.U
 		&i.LastModifiedAt,
 		&i.ClientAvailableDate,
 		&i.ClientAvailableTimeSlot,
+		&i.ComplaintAddress,
 	)
 	return i, err
 }

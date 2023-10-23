@@ -156,7 +156,6 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	complaint_info, err := ser.complaint_repo.FetchComplaintDetailByComplaint(complaint_id)
 
 	if err != nil {
-		fmt.Println("RETURNING FROM :", err)
 		return dto.ComplaintInfoByComplaintDTO{}, err
 	}
 
@@ -223,6 +222,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 		LastModifiedAt:      complaint_info.LastModifiedAt,
 		ClientAvailableDate: available_date,
 		ClientTimeSlots:     complaint_info.ClientAvailableTimeSlot.String,
+		ComplaintAddress:    complaint_info.ComplaintAddress.String,
 	}
 
 	wg.Wait()

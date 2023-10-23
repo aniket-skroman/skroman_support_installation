@@ -101,6 +101,7 @@ type ComplaintFullDetailsDTO struct {
 	ClientAvailableDate    string                     `json:"client_available_date" binding:"required"`
 	ClientTimeSlots        string                     `json:"available_time_slots" binding:"required"`
 	ComplaintStatus        string                     `json:"complaint_status"`
+	ComplaintAddress       string                     `json:"complaint_address"`
 	DeviceModel            string                     `json:"device_model"`
 	DeviceType             string                     `json:"device_type"`
 	ComplaintRaisedAt      time.Time                  `json:"complaint_raised_at"`
