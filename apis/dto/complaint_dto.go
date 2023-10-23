@@ -126,6 +126,7 @@ type ComplaintInfoDTO struct {
 }
 
 func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.ComplaintInfo) interface{} {
+
 	if len(module_data) == 1 {
 		a_date := strings.ReplaceAll(module_data[0].ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
 

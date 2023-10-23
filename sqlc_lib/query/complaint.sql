@@ -168,6 +168,7 @@ from complaints as c
 join complaint_info as ci 
 on c.id = ci.complaint_id
 where c.client_id = $1
+order by ci.created_at desc 
 limit $2
 offset $3
 ;
