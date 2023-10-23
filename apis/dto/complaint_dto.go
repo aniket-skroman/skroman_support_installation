@@ -173,13 +173,13 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 
 // ----------------------------------------- CLIENT REGISTRATION  ------------------------------------------------ //
 type ClientRegistration struct {
-	UserName    string `json:"user_name" binding:"required"`
-	Email       string `json:"email" binding:"required"`
-	Contact     string `json:"contact" binding:"required"`
-	AddressLine string `json:"address" binding:"required"`
+	UserName    string `json:"userName" binding:"required"`
+	Email       string `json:"emailId" binding:"required"`
+	Contact     string `json:"mobileNumber" binding:"required"`
+	AddressLine string `json:"address1" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	State       string `json:"state" binding:"required"`
-	Pincode     string `json:"pin_code" binding:"required"`
+	Pincode     string `json:"pinCode" binding:"required"`
 }
 
 type FetchComplaintsByClientRequestDTO struct {
