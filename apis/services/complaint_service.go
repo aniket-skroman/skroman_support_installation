@@ -37,6 +37,8 @@ type ComplaintService interface {
 	FetchAllComplaintCounts() dto.AllComplaintsCount
 	ClientRegistration(req dto.ClientRegistration) error
 	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error)
+	Fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error)
+	Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error)
 }
 
 type complaint_service struct {
@@ -167,7 +169,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func(client_id string) {
 		defer wg.Done()
 
-		client_info, err := ser.fetch_client_info(complaint_info.Client.(string))
+		client_info, err := ser.Fetch_client_info(complaint_info.Client.(string))
 		if err != nil {
 			result.ClientInfo = proxycalls.ClientInfoDTO{}
 		} else {
@@ -190,7 +192,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 
 	go func() {
 		defer wg.Done()
-		user_data, _ := ser.fetch_user_info(complaint_info.CreatedBy.String())
+		user_data, _ := ser.Fetch_user_info(complaint_info.CreatedBy.String())
 		if user_data.FullName == "" {
 			result.ComplaintInfo.CreatedBy = "NOT AVAILABEL"
 		} else {
@@ -348,7 +350,6 @@ func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *mu
 	_, err = ser.complaint_repo.UploadDeviceImage(args)
 
 	err = helper.Handle_db_err(err)
-	fmt.Println("File Path from service : ", path, complaint_obj_id)
 	return err
 }
 
@@ -578,7 +579,7 @@ func (ser *complaint_service) count_complaints(status string) (int64, error) {
 }
 
 // from another server
-func (ser *complaint_service) fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error) {
+func (ser *complaint_service) Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error) {
 	proxy_call := proxycalls.ProxyCalls{}
 	proxy_call.ReqEndpoint = "profileapi/profileuser/userId"
 	proxy_call.RequestMethod = http.MethodPost
@@ -629,7 +630,7 @@ func (ser *complaint_service) fetch_client_info(client_id string) (proxycalls.Cl
 }
 
 // fetch user data by user id from user-service
-func (ser *complaint_service) fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error) {
+func (ser *complaint_service) Fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error) {
 
 	// generate auth_token for user id
 	token := ser.jwt_service.GenerateTempToken(user_id, "emp")
@@ -695,7 +696,7 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	}
 
 	// call user service to fetch a emp data
-	user_data, err := ser.fetch_user_info(allocation_data.AllocatedTo.String())
+	user_data, err := ser.Fetch_user_info(allocation_data.AllocatedTo.String())
 	if err != nil {
 		return dto.AllocatedEmpDetailsDTO{}, err
 	}

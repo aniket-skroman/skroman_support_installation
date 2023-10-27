@@ -9,16 +9,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ComplaintRouter(router *gin.Engine, store *apis.Store) {
-	var (
-		complaint_repo  = repositories.NewComplaintRepository(store)
-		allocation_repo = repositories.NewComplaintAllocationRepository(store)
-		allocation_ser  = services.NewComplaintAllocationService(allocation_repo)
-		jwt_service     = services.NewJWTService()
-		complaint_serv  = services.NewComplaintService(complaint_repo, jwt_service, allocation_ser)
-		complaint_cont  = controller.NewComplaintController(complaint_serv)
-	)
+var (
+	complaint_repo  repositories.ComplaintRepository
+	allocation_repo repositories.ComplaintAllocationRepository
+	allocation_ser  services.ComplaintAllocationService
+	jwt_service     services.JWTService
+	complaint_serv  services.ComplaintService
+	complaint_cont  controller.ComplaintController
+)
 
+func ComplaintRouter(router *gin.Engine, store *apis.Store) {
+	complaint_repo = repositories.NewComplaintRepository(store)
+	allocation_repo = repositories.NewComplaintAllocationRepository(store)
+	allocation_ser = services.NewComplaintAllocationService(allocation_repo)
+	jwt_service = services.NewJWTService()
+	complaint_serv = services.NewComplaintService(complaint_repo, jwt_service, allocation_ser)
+	complaint_cont = controller.NewComplaintController(complaint_serv)
 	complaint := router.Group("/api", middleware.AuthorizeJWT(jwt_service))
 	{
 		complaint.POST("/create-complaint", complaint_cont.CreateComplaint)

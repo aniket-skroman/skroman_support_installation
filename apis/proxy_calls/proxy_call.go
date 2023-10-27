@@ -7,7 +7,7 @@ import (
 
 var (
 	BASE_URL     = "http://3.7.18.55:3000/skroman/"
-	USER_SERVICE = "http://localhost:8080/api/"
+	USER_SERVICE = "http://15.207.19.172:8080/api/"
 )
 
 type ProxyCalls struct {
