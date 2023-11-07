@@ -247,6 +247,7 @@ type FetchAllComplaintsParams struct {
 	Status string `json:"status"`
 }
 
+// fetching a complaint by status like allocate, init etc
 func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaintsParams) ([]ComplaintInfo, error) {
 	rows, err := q.db.QueryContext(ctx, fetchAllComplaints, arg.Limit, arg.Offset, arg.Status)
 	if err != nil {
@@ -546,6 +547,69 @@ func (q *Queries) FetchDeviceImagesByComplaintId(ctx context.Context, complaintI
 		return nil, err
 	}
 	return items, nil
+}
+
+const fetchTotalComplaints = `-- name: FetchTotalComplaints :many
+select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
+order by created_at desc
+limit $1
+offset $2
+`
+
+type FetchTotalComplaintsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+// fetching all complaint
+func (q *Queries) FetchTotalComplaints(ctx context.Context, arg FetchTotalComplaintsParams) ([]ComplaintInfo, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTotalComplaints, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ComplaintInfo{}
+	for rows.Next() {
+		var i ComplaintInfo
+		if err := rows.Scan(
+			&i.ID,
+			&i.ComplaintID,
+			&i.DeviceID,
+			&i.ProblemStatement,
+			&i.ProblemCategory,
+			&i.ClientAvailable,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeviceType,
+			&i.DeviceModel,
+			&i.ClientAvailableDate,
+			&i.ClientAvailableTimeSlot,
+			&i.ComplaintAddress,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const totalComplaintCount = `-- name: TotalComplaintCount :one
+select count(*) from complaints
+`
+
+// count for total complaints
+func (q *Queries) TotalComplaintCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, totalComplaintCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const updateComplaintInfo = `-- name: UpdateComplaintInfo :one

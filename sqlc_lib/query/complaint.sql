@@ -31,13 +31,25 @@ insert into device_images (
     $1, $2
 ) returning *;
 
-
+/* fetching a complaint by status like allocate, init etc */
 -- name: FetchAllComplaints :many
 select * from complaint_info
 where status =$3
 order by created_at desc 
 limit $1
 offset $2;
+
+/* fetching all complaint */
+-- name: FetchTotalComplaints :many
+select * from complaint_info
+order by created_at desc
+limit $1
+offset $2;
+
+
+/* count for total complaints */
+-- name: TotalComplaintCount :one
+select count(*) from complaints;
 
 -- name: CountComplaints :execresult
 select * from complaint_info

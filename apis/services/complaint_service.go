@@ -131,8 +131,18 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 			helper.SetPaginationData(int(req.PageID), count)
 		}
 	}()
+	var complaints []db.ComplaintInfo
+	var err error
 
-	complaints, err := ser.complaint_repo.FetchAllComplaints(args)
+	if req.TagKey == "TOTAL" {
+		args := db.FetchTotalComplaintsParams{
+			Limit:  req.PageSize,
+			Offset: (req.PageID - 1) * req.PageSize,
+		}
+		complaints, err = ser.complaint_repo.FetchTotalComplaints(args)
+	} else {
+		complaints, err = ser.complaint_repo.FetchAllComplaints(args)
+	}
 
 	if err != nil {
 		return nil, err
@@ -563,6 +573,14 @@ func (ser *complaint_service) remove_local_files(file_path string) {
 }
 
 func (ser *complaint_service) count_complaints(status string) (int64, error) {
+
+	if status == "TOTAL" {
+		count, err := ser.complaint_repo.TotalComplaints()
+		if err != nil {
+			return 0, err
+		}
+		return count, nil
+	}
 	result, err := ser.complaint_repo.CountComplaints(status)
 
 	if err != nil {

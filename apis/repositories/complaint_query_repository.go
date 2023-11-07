@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
@@ -24,11 +25,20 @@ func (repo *complaint_repository) CreateComplaintInfo(args db.CreateComplaintInf
 	return repo.db.Queries.CreateComplaintInfo(ctx, args)
 }
 
+// complaint by status
 func (repo *complaint_repository) FetchAllComplaints(args db.FetchAllComplaintsParams) ([]db.ComplaintInfo, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
 
 	return repo.db.Queries.FetchAllComplaints(ctx, args)
+}
+
+// fetching all complaint
+func (repo *complaint_repository) FetchTotalComplaints(args db.FetchTotalComplaintsParams) ([]db.ComplaintInfo, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchTotalComplaints(ctx, args)
 }
 
 // complaint count by status
@@ -37,6 +47,17 @@ func (repo *complaint_repository) CountComplaints(status string) (sql.Result, er
 	defer cancel()
 
 	return repo.db.Queries.CountComplaints(ctx, status)
+}
+
+// total count of complaints
+func (repo *complaint_repository) TotalComplaints() (int64, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+	result, err := repo.db.Queries.TotalComplaintCount(ctx)
+
+	fmt.Print("Total Complaint repo called..", result, err)
+
+	return result, err
 }
 
 func (repo *complaint_repository) FetchComplaintDetailByComplaint(complaint_id uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error) {
