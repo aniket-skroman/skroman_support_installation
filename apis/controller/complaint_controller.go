@@ -35,6 +35,7 @@ type ComplaintController interface {
 	FetchComplaintsByClient(ctx *gin.Context)
 
 	ClientRegistration(*gin.Context)
+	DeleteClient(*gin.Context)
 }
 
 type complaint_controller struct {
@@ -437,5 +438,31 @@ func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
+	ctx.JSON(http.StatusOK, cont.response)
+}
+
+/* delete a client means simply deactivate a account */
+func (cont *complaint_controller) DeleteClient(ctx *gin.Context) {
+	client_id := ctx.Param("client_id")
+
+	if client_id == "" {
+		cont.response = utils.RequestParamsMissingResponse("provide a required params")
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+
+	err := cont.comp_serv.DeleteClient(client_id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			cont.response = utils.BuildFailedResponse("user not found to delete")
+			ctx.JSON(http.StatusNotFound, cont.response)
+			return
+		}
+
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusInternalServerError, cont.response)
+		return
+	}
+	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, nil)
 	ctx.JSON(http.StatusOK, cont.response)
 }

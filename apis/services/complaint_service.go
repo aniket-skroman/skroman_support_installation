@@ -39,6 +39,7 @@ type ComplaintService interface {
 	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error)
 	Fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error)
 	Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error)
+	DeleteClient(client_id string) error
 }
 
 type complaint_service struct {
@@ -878,4 +879,62 @@ func (ser *complaint_service) FetchComplaintsByClient(req dto.FetchComplaintsByC
 		}
 	}
 	return result, nil
+}
+
+/* delete a client by proxy call */
+func (ser *complaint_service) DeleteClient(client_id string) error {
+	client_data := struct {
+		UserId string `json:"userId"`
+	}{
+		UserId: client_id,
+	}
+
+	request_body, err := json.Marshal(&client_data)
+
+	if err != nil {
+		return err
+	}
+
+	proxy := proxycalls.ProxyCalls{}
+	proxy.IsRequestBody = true
+	proxy.RequestBody = request_body
+	proxy.RequestMethod = http.MethodPut
+	proxy.ReqEndpoint = "profileapi/deactivate_account"
+
+	response, err := proxy.MakeRequestWithBody()
+
+	if err != nil {
+		return err
+	}
+
+	defer func(response *http.Response) {
+		if err := response.Body.Close(); err != nil {
+			return
+		}
+	}(response)
+
+	response_code := response.StatusCode
+	if response_code == http.StatusOK {
+
+		response_body := struct {
+			Msg          string `json:"msg"`
+			UserId       string `json:"userId"`
+			EmailId      string `json:"emailId"`
+			MobileNumber string `json:"mobileNumber"`
+		}{}
+
+		err := json.NewDecoder(response.Body).Decode(&response_body)
+		if err != nil {
+			return errors.New("something wents wrong")
+		}
+
+		if !strings.Contains(response_body.Msg, "User Account Deactivate Success") {
+			return errors.New("failed to delete user please try again")
+		}
+		return nil
+
+	} else if response_code == http.StatusNotFound {
+		return sql.ErrNoRows
+	}
+	return errors.New("unknow error occured")
 }

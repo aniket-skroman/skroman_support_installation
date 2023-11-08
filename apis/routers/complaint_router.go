@@ -45,6 +45,7 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	{
 		client.POST("/client-registraion", complaint_cont.ClientRegistration)
 		client.GET("/client-complaints/:client_id/:page_id/:page_size", complaint_cont.FetchComplaintsByClient)
+		client.DELETE("/delet-client/:client_id", complaint_cont.DeleteClient)
 	}
 
 	device_img := router.Group("/api")
