@@ -537,6 +537,8 @@ func (ser *complaint_service) ClientRegistration(req dto.ClientRegistration) err
 		PinCode:      req.Pincode,
 	}
 
+	var err error
+
 	request_body, err := json.Marshal(&req_body)
 
 	if err != nil {
@@ -554,7 +556,8 @@ func (ser *complaint_service) ClientRegistration(req dto.ClientRegistration) err
 		return err
 	}
 
-	if response.StatusCode == http.StatusAccepted || response.StatusCode == http.StatusOK {
+	switch response.StatusCode {
+	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
 		body_data := struct {
 			Msg          string `json:"msg"`
 			UserID       string `json:"userId"`
@@ -562,11 +565,13 @@ func (ser *complaint_service) ClientRegistration(req dto.ClientRegistration) err
 			MobileNumber string `json:"mobileNumber"`
 		}{}
 
-		err := json.NewDecoder(response.Body).Decode(&body_data)
+		err = json.NewDecoder(response.Body).Decode(&body_data)
 		return err
+	default:
+		err = errors.New("faild to created user account")
 	}
 
-	return errors.New("faild to created user account")
+	return err
 }
 
 func (ser *complaint_service) remove_local_files(file_path string) {

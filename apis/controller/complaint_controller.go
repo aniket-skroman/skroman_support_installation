@@ -411,7 +411,7 @@ func (cont *complaint_controller) ClientRegistration(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildSuccessResponse(utils.USER_REGISTRATION_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
-	ctx.JSON(http.StatusAccepted, cont.response)
+	ctx.JSON(http.StatusCreated, cont.response)
 }
 
 func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
