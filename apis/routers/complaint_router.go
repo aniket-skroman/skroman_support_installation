@@ -51,5 +51,6 @@ func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	device_img := router.Group("/api")
 	{
 		device_img.GET("/device-file/:directory/:image_path", complaint_cont.FetchDeviceImageURL)
+		device_img.GET("/quotations/:directory/:image_path", complaint_cont.FetchPDFFile)
 	}
 }

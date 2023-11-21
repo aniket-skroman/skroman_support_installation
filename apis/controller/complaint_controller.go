@@ -36,6 +36,8 @@ type ComplaintController interface {
 
 	ClientRegistration(*gin.Context)
 	DeleteClient(*gin.Context)
+
+	FetchPDFFile(ctx *gin.Context)
 }
 
 type complaint_controller struct {
@@ -145,6 +147,21 @@ func (cont *complaint_controller) FetchDeviceImageURL(ctx *gin.Context) {
 
 	respo := generateSignedS3URL(req.FilePath, req.Directory)
 	defer respo.Body.Close()
+	ctx.DataFromReader(http.StatusOK, *respo.ContentLength, *respo.ContentType, respo.Body, nil)
+}
+
+func (cont *complaint_controller) FetchPDFFile(ctx *gin.Context) {
+
+	var req dto.VideoRequestDTO
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
+		ctx.JSON(http.StatusBadRequest, cont.response)
+		return
+	}
+	// ctx.JSON(http.StatusOK, "run.."+req.Directory+req.FilePath)
+	respo := generateSignedS3URLForPDF(req.FilePath, req.Directory)
+	//defer respo.Body.Close()
 	ctx.DataFromReader(http.StatusOK, *respo.ContentLength, *respo.ContentType, respo.Body, nil)
 }
 
@@ -296,6 +313,31 @@ func generateSignedS3URL(img string, folder_name string) *s3.GetObjectOutput {
 	out, err := svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(item),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return out
+}
+
+func generateSignedS3URLForPDF(img string, folder_name string) *s3.GetObjectOutput {
+	s3_connection := connections.NewS3Connection()
+	sess, err := s3_connection.MakeNewSession()
+	if err != nil {
+		return &s3.GetObjectOutput{}
+	}
+
+	bucket := s3_connection.GetBucketName()
+	item := "/" + folder_name + "/" + img
+	svc := s3.New(sess)
+	content := "application/pdf"
+	ContentDisposition := "inline"
+
+	out, err := svc.GetObject(&s3.GetObjectInput{
+		Bucket:                     aws.String(bucket),
+		Key:                        aws.String(item),
+		ResponseContentType:        &content,
+		ResponseContentDisposition: &ContentDisposition,
 	})
 	if err != nil {
 		log.Fatal(err)
