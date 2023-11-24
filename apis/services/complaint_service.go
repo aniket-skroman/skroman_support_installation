@@ -37,7 +37,7 @@ type ComplaintService interface {
 	FetchAllComplaintCounts() dto.AllComplaintsCount
 	ClientRegistration(req dto.ClientRegistration) error
 	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error)
-	Fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error)
+	Fetch_user_info(string, string, string) (dto.AllocatedEmpDetailsDTO, error)
 	Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error)
 	DeleteClient(client_id string) error
 }
@@ -203,7 +203,7 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 
 	go func() {
 		defer wg.Done()
-		user_data, _ := ser.Fetch_user_info(complaint_info.CreatedBy.String())
+		user_data, _ := ser.Fetch_user_info(complaint_info.CreatedBy.String(), "EMP", "SALES")
 		if user_data.FullName == "" {
 			result.ComplaintInfo.CreatedBy = "NOT AVAILABEL"
 		} else {
@@ -654,10 +654,10 @@ func (ser *complaint_service) Fetch_client_info(client_id string) (proxycalls.Cl
 }
 
 // fetch user data by user id from user-service
-func (ser *complaint_service) Fetch_user_info(user_id string) (dto.AllocatedEmpDetailsDTO, error) {
+func (ser *complaint_service) Fetch_user_info(user_id, user_type, dept string) (dto.AllocatedEmpDetailsDTO, error) {
 
 	// generate auth_token for user id
-	token := ser.jwt_service.GenerateTempToken(user_id, "emp")
+	token := ser.jwt_service.GenerateTempToken(user_id, user_type, dept)
 	requrl := "http://15.207.19.172:8080/api/fetch-user"
 
 	request, _ := http.NewRequest(http.MethodGet, requrl, nil)
@@ -720,7 +720,7 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	}
 
 	// call user service to fetch a emp data
-	user_data, err := ser.Fetch_user_info(allocation_data.AllocatedTo.String())
+	user_data, err := ser.Fetch_user_info(allocation_data.AllocatedTo.String(), "EMP", "SALES")
 	if err != nil {
 		return dto.AllocatedEmpDetailsDTO{}, err
 	}
@@ -799,7 +799,7 @@ func (ser *complaint_service) fetch_month_wise_count() ([]db.FetchCountByMonthRo
 // fetch emp count by calling users service
 func (ser *complaint_service) fetch_emp_count() (int64, error) {
 	// generate auth_token for user id
-	token := ser.jwt_service.GenerateTempToken(utils.TOKEN_ID, "emp")
+	token := ser.jwt_service.GenerateTempToken(utils.TOKEN_ID, "EMP", "SALES")
 	requrl := "http://15.207.19.172:8080/api/emp-count"
 
 	request, _ := http.NewRequest(http.MethodGet, requrl, nil)
