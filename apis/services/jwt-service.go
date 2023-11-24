@@ -1,8 +1,6 @@
 package services
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -69,19 +67,6 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
-		}
-		if t.Valid {
-			fmt.Println("token valid ", t)
-		}
-		byteArr, _ := json.Marshal(t.Claims)
-
-		tokenData := new(jwtCustomClaim)
-
-		json.Unmarshal(byteArr, &tokenData)
-
-		d := time.Since(tokenData.CreatedAt)
-		if d.Hours() > 24 {
-			return nil, errors.New("token has been expired")
 		}
 
 		return []byte(j.secretKey), nil

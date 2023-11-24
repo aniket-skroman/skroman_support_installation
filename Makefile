@@ -5,7 +5,7 @@ liveserver:
 	nodemon --exec go run application.go --signal SIGTERM
 
 migratecreate:
-	migrate create -ext sql -dir db/migrations/ -seq add_field_complaint_info
+	migrate create -ext sql -dir db/migrations/ -seq init_complaint_progress
 
 migrateup:
 	migrate -path db/migrations -database "postgresql://postgres:root@localhost:5432/postgres?sslmode=disable" --verbose up
@@ -23,7 +23,7 @@ migratedown_maindb:
 	migrate -path db/migrations/ -database  "postgresql://postgres:support12@skroman-user.ckwveljlsuux.ap-south-1.rds.amazonaws.com:5432/skroman_client_complaints" down
 
 migratefix_maindb:
-	migrate -path db/migrations/ -database  "postgresql://postgres:support12@skroman-user.ckwveljlsuux.ap-south-1.rds.amazonaws.com:5432/skroman_client_complaints" force 7
+	migrate -path db/migrations/ -database  "postgresql://postgres:support12@skroman-user.ckwveljlsuux.ap-south-1.rds.amazonaws.com:5432/skroman_client_complaints" force 8
 
 sqlc:
 	sqlc generate
