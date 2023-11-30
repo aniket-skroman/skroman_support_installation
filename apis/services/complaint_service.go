@@ -625,7 +625,7 @@ func (ser *complaint_service) Fetch_client_info(client_id string) (interface{}, 
 				Address   string    `json:"address"`
 				City      string    `json:"city"`
 				State     string    `json:"state"`
-				Pincode   string    `json:"pincode"`
+				Pincode   string    `json:"pinCode"`
 				CreatedAt time.Time `json:"created_at"`
 				UpdatedAt time.Time `json:"updated_at"`
 			} `json:"user_data"`
