@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -637,6 +638,7 @@ func (ser *complaint_service) Fetch_client_info(client_id string) (interface{}, 
 		}{}
 
 		err = json.NewDecoder(response.Body).Decode(&response_data)
+		log.Println("Client Response : ", response_data)
 		return response_data.UserData, err
 	}
 
@@ -793,13 +795,18 @@ func (ser *complaint_service) fetch_clinet_count() (int64, error) {
 	response, err := api_request.MakeApiRequest()
 
 	if err != nil {
-
 		return 0, err
 	}
-	fmt.Println("Response status code : ", response.StatusCode)
-	//var response_data map[string]interface{}
 
-	return 10, nil
+	if response.StatusCode == http.StatusOK {
+		response_data := struct {
+			ClientCount int64 `json:"client_count"`
+		}{}
+
+		err = json.NewDecoder(response.Body).Decode(&response_data)
+		return response_data.ClientCount, err
+	}
+	return 0, nil
 }
 
 // fetch complaints by clients
@@ -821,11 +828,6 @@ func (ser *complaint_service) FetchComplaintsByClient(req dto.FetchComplaintsByC
 
 		if err != nil {
 			err_chan <- err
-			return
-		}
-
-		if len(complaints) == 0 {
-			err_chan <- sql.ErrNoRows
 			return
 		}
 

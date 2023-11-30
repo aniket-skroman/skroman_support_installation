@@ -15,8 +15,8 @@ type ClientInfoDTO struct {
 	UserName     string `json:"userName,omitempty"`
 }
 type ClientByIdResponse struct {
-	Msg    string        `json:"msg"`
-	Result ClientInfoDTO `json:"result"`
+	Msg    string        `json:"msg,omitempty"`
+	Result ClientInfoDTO `json:"result,omitempty"`
 }
 
 type ClientRegistration struct {
