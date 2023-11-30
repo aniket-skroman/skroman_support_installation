@@ -719,11 +719,11 @@ func (ser *complaint_service) fetch_allocated_emp_details(compaint_id string) (d
 	return user_data, nil
 }
 
-func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.Complaints, error) {
+func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.FetchComplaintByComplaintIdRow, error) {
 	complaint_obj, err := helper.ValidateUUID(complaint_id)
 
 	if err != nil {
-		return db.Complaints{}, err
+		return db.FetchComplaintByComplaintIdRow{}, err
 	}
 
 	return ser.complaint_repo.FetchComplaintById(complaint_obj)

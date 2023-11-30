@@ -62,11 +62,6 @@ func (serv *installation_user) FetchAllocatedComplaintByEmp(allocated_id string)
 
 			// client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
 			// if err == nil && client_info != nil {
-			// 	type ClientData struct {
-			// 		UserName string
-			// 	}
-
-			// 	log.Println("Name : ", reflect.TypeOf(&client_info))
 			// 	//fmt.Println("Client Info Result : ", client_info)
 			// }
 			// if err == nil {

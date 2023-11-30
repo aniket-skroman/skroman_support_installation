@@ -24,7 +24,7 @@ type ComplaintRepository interface {
 	DeleteDeviceFiles(file_id uuid.UUID) (sql.Result, error)
 	FetchDeviceFileById(file_id uuid.UUID) (db.DeviceImages, error)
 	DeleteComplaint(complaint_id uuid.UUID) ([]db.DeviceImages, error)
-	FetchComplaintById(complaint_id uuid.UUID) (db.Complaints, error)
+	FetchComplaintById(complaint_id uuid.UUID) (db.FetchComplaintByComplaintIdRow, error)
 	UpdateComplaintStatus(args db.UpdateComplaintStatusParams) (sql.Result, error)
 	AllComplaintsCount() (db.CountAllComplaintRow, error)
 	FetchCountByMonths() ([]db.FetchCountByMonthRow, error)

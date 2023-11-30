@@ -329,11 +329,11 @@ func TestCountComplaint(t *testing.T) {
 }
 
 func TestFetchComplaintByComplaintID(t *testing.T) {
-	complaint_id, err := uuid.Parse("2571e975-4c0d-42fd-bea2-bdf59b38d482")
+	complaint_id, err := uuid.Parse("238d0e22-ab32-4d39-af17-d349811ca737")
 	require.NoError(t, err)
 
-	complaints, err := testQueries.FetchComplaintDetailByComplaint(context.Background(), complaint_id)
-	fmt.Printf("%+v\n", complaints)
+	complaints, err := testQueries.FetchComplaintByComplaintId(context.Background(), complaint_id)
+	fmt.Printf("%+v\n", complaints.ClientID)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, complaints)

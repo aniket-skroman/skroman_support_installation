@@ -124,7 +124,12 @@ delete from complaints
 where id = $1;
 
 -- name: FetchComplaintByComplaintId :one
-select * from complaints
+select id,
+created_by, created_at, updated_at,
+(
+    case when client_id <> '' then client_id else 'DEFAULT' end
+) as client_id
+from complaints
 where id = $1;
 
 

@@ -284,19 +284,32 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 }
 
 const fetchComplaintByComplaintId = `-- name: FetchComplaintByComplaintId :one
-select id, client_id, created_by, created_at, updated_at from complaints
+select id,
+created_by, created_at, updated_at,
+(
+    case when client_id <> '' then client_id else 'DEFAULT' end
+) as client_id
+from complaints
 where id = $1
 `
 
-func (q *Queries) FetchComplaintByComplaintId(ctx context.Context, id uuid.UUID) (Complaints, error) {
+type FetchComplaintByComplaintIdRow struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedBy uuid.UUID `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	ClientID  string    `json:"client_id"`
+}
+
+func (q *Queries) FetchComplaintByComplaintId(ctx context.Context, id uuid.UUID) (FetchComplaintByComplaintIdRow, error) {
 	row := q.db.QueryRowContext(ctx, fetchComplaintByComplaintId, id)
-	var i Complaints
+	var i FetchComplaintByComplaintIdRow
 	err := row.Scan(
 		&i.ID,
-		&i.ClientID,
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ClientID,
 	)
 	return i, err
 }
