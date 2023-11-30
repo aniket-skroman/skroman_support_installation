@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -74,20 +73,15 @@ func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO)
 		return nil, err
 	}
 	info_args := db.CreateComplaintInfoParams{
-		ComplaintID: complaint.ID,
-		DeviceID:    req.DeviceID,
-		DeviceType: sql.NullString{
-			String: req.DeviceModel, Valid: true,
-		},
-		DeviceModel:      sql.NullString{String: req.DeviceModel, Valid: true},
-		ProblemStatement: req.ProblemStatement,
-		ProblemCategory:  sql.NullString{String: req.ProblemCategory, Valid: true},
-		ClientAvailable:  time.Now(),
-		Status:           "INIT",
-		ClientAvailableDate: sql.NullTime{
-			Time:  avalibale_date,
-			Valid: true,
-		},
+		ComplaintID:             complaint.ID,
+		DeviceID:                req.DeviceID,
+		DeviceType:              sql.NullString{String: req.DeviceType, Valid: true},
+		DeviceModel:             sql.NullString{String: req.DeviceModel, Valid: true},
+		ProblemStatement:        req.ProblemStatement,
+		ProblemCategory:         sql.NullString{String: req.ProblemCategory, Valid: true},
+		ClientAvailable:         time.Now(),
+		Status:                  "INIT",
+		ClientAvailableDate:     sql.NullTime{Time: avalibale_date, Valid: true},
 		ClientAvailableTimeSlot: sql.NullString{String: time_slots, Valid: true},
 	}
 
@@ -638,7 +632,6 @@ func (ser *complaint_service) Fetch_client_info(client_id string) (interface{}, 
 		}{}
 
 		err = json.NewDecoder(response.Body).Decode(&response_data)
-		log.Println("Client Response : ", response_data)
 		return response_data.UserData, err
 	}
 
