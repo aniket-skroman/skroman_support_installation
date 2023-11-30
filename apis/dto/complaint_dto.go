@@ -22,7 +22,6 @@ type CreateComplaintRequestDTO struct {
 	ProblemCategory     string          `json:"problem_category" binding:"required"`
 	ClientAvailableDate string          `json:"client_available_date" binding:"required"`
 	ClientTimeSlots     ClientTimeSlots `json:"available_time_slots" binding:"required"`
-	ComplaintAddress    string          `json:"complaint_address" binding:"required"`
 }
 
 type UpdateComplaintRequestDTO struct {
@@ -30,7 +29,6 @@ type UpdateComplaintRequestDTO struct {
 	DeviceID            string          `json:"device_id"`
 	DeviceType          string          `json:"device_type" binding:"required"`
 	DeviceModel         string          `json:"device_model" binding:"required"`
-	ComplaintAddress    string          `json:"complaint_address" binding:"required"`
 	ProblemStatement    string          `json:"problem_statement" binding:"required"`
 	ProblemCategory     string          `json:"problem_category" binding:"required"`
 	ClientAvailableDate string          `json:"client_available_date" binding:"required"`

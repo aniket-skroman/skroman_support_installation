@@ -17,10 +17,9 @@ insert into complaint_info (
     client_available,
     client_available_date,
     client_available_time_slot,
-    complaint_address,
     status
 ) values (
-    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+    $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
 ) returning *;
 
 -- name: AddDeviceImages :one
@@ -97,7 +96,6 @@ problem_statement=$5,
 problem_category=$6,
 client_available_date=$7, 
 client_available_time_slot=$8,
-complaint_address=$9,
 updated_at = CURRENT_TIMESTAMP
 where id = $1
 returning *;
