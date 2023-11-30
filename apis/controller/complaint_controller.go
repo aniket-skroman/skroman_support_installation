@@ -448,6 +448,10 @@ func (cont *complaint_controller) ClientRegistration(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
+		if err == helper.Err_Invalid_Input {
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}

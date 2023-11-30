@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
-	proxycalls "github.com/aniket-skroman/skroman_support_installation/apis/proxy_calls"
 	"github.com/aniket-skroman/skroman_support_installation/apis/repositories"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/google/uuid"
@@ -61,14 +60,17 @@ func (serv *installation_user) FetchAllocatedComplaintByEmp(allocated_id string)
 				ClientID:         complaint.ClientID,
 			}
 
-			client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
-			if err == nil {
-				complaints[i].ClientInfo = proxycalls.ClientInfoDTO{
-					UserName:     client_info.Result.UserName,
-					EmailID:      client_info.Result.EmailID,
-					MobileNumber: client_info.Result.MobileNumber,
-				}
-			}
+			// client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
+			// if err == nil && client_info != nil {
+			// 	fmt.Println("Client Info Result : ", client_info)
+			// }
+			// if err == nil {
+			// 	// complaints[i].ClientInfo = proxycalls.ClientInfoDTO{
+			// 	// 	UserName:     client_info["user_name"].(string),
+			// 	// 	EmailID:      client_info.Result.EmailID,
+			// 	// 	MobileNumber: client_info.Result.MobileNumber,
+			// 	// }
+			// }
 
 		}(complaint, i)
 

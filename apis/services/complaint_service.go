@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -36,9 +34,9 @@ type ComplaintService interface {
 	ComplaintResolve(complaint_id string) error
 	FetchAllComplaintCounts() dto.AllComplaintsCount
 	ClientRegistration(req dto.ClientRegistration) error
-	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error)
+	FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) (dto.ComplaintByClientDTO, error)
 	Fetch_user_info(string, string, string) (dto.AllocatedEmpDetailsDTO, error)
-	Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error)
+	Fetch_client_info(client_id string) (interface{}, error)
 	DeleteClient(client_id string) error
 }
 
@@ -182,9 +180,9 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 
 		client_info, err := ser.Fetch_client_info(complaint_info.Client.(string))
 		if err != nil {
-			result.ClientInfo = proxycalls.ClientInfoDTO{}
+			result.ClientInfo = nil
 		} else {
-			result.ClientInfo = client_info.Result
+			result.ClientInfo = client_info
 		}
 	}(complaint_info.Client.(string))
 
@@ -525,6 +523,13 @@ func (ser *complaint_service) DeleteComplaint(complaint_id string) error {
 
 // client registartion by automation server
 func (ser *complaint_service) ClientRegistration(req dto.ClientRegistration) error {
+	// implement a validations for data
+	isValid, _ := helper.ValidateInputs(req.Contact)
+
+	if !isValid.(bool) {
+		return helper.Err_Invalid_Input
+	}
+
 	reqUrl := "userapi/user-registration"
 	req_body := proxycalls.ClientRegistration{
 		UserName:     req.UserName,
@@ -603,54 +608,41 @@ func (ser *complaint_service) count_complaints(status string) (int64, error) {
 }
 
 // from another server
-func (ser *complaint_service) Fetch_client_info(client_id string) (proxycalls.ClientByIdResponse, error) {
-	proxy_call := proxycalls.ProxyCalls{}
-	proxy_call.ReqEndpoint = "profileapi/profileuser/userId"
-	proxy_call.RequestMethod = http.MethodPost
+func (ser *complaint_service) Fetch_client_info(client_id string) (interface{}, error) {
+	token := ser.jwt_service.GenerateTempToken(utils.TOKEN_ID, "EMP", "SALES")
+	api_request := proxycalls.NewAPIRequest("client/"+client_id, http.MethodGet, false, nil, nil, map[string]string{"Authorization": token})
 
-	temp_body := struct {
-		UserId string `json:"userId"`
-	}{
-		UserId: client_id,
-	}
-
-	request_body, err := json.Marshal(temp_body)
+	response, err := api_request.MakeApiRequest()
 
 	if err != nil {
 		return proxycalls.ClientByIdResponse{}, err
 	}
 
-	proxy_call.RequestBody = request_body
+	if response.StatusCode == http.StatusOK {
 
-	response, err := proxy_call.MakeRequestWithBody()
+		response_data := struct {
+			Error    string `json:"error"`
+			Message  string `json:"message"`
+			Status   bool   `json:"status"`
+			UserData struct {
+				ID        string    `json:"id"`
+				UserName  string    `json:"user_name"`
+				Email     string    `json:"email"`
+				Contact   string    `json:"contact"`
+				Address   string    `json:"address"`
+				City      string    `json:"city"`
+				State     string    `json:"state"`
+				Pincode   string    `json:"pincode"`
+				CreatedAt time.Time `json:"created_at"`
+				UpdatedAt time.Time `json:"updated_at"`
+			} `json:"user_data"`
+		}{}
 
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			return
-		}
-	}()
-
-	if err != nil {
-		return proxycalls.ClientByIdResponse{}, err
+		err = json.NewDecoder(response.Body).Decode(&response_data)
+		return response_data.UserData, err
 	}
 
-	response_body, err := io.ReadAll(response.Body)
-
-	if err != nil {
-		return proxycalls.ClientByIdResponse{}, err
-	}
-
-	client_info := proxycalls.ClientByIdResponse{}
-
-	if err := json.Unmarshal(response_body, &client_info); err != nil {
-		return proxycalls.ClientByIdResponse{}, err
-	}
-
-	if reflect.DeepEqual(client_info, proxycalls.ClientByIdResponse{}) || client_info.Msg != "success get the user Profile" {
-		return proxycalls.ClientByIdResponse{}, errors.New("client info not found")
-	}
-
-	return client_info, nil
+	return proxycalls.ClientByIdResponse{}, nil
 }
 
 // fetch user data by user id from user-service
@@ -779,7 +771,7 @@ func (ser *complaint_service) FetchAllComplaintCounts() dto.AllComplaintsCount {
 	// fetching emp count
 	go func() {
 		defer wg.Done()
-		count, _ := ser.fetch_emp_count()
+		count, _ := ser.fetch_clinet_count()
 		result.EmpCount = count
 	}()
 
@@ -796,93 +788,99 @@ func (ser *complaint_service) fetch_month_wise_count() ([]db.FetchCountByMonthRo
 	return ser.complaint_repo.FetchCountByMonths()
 }
 
-// fetch emp count by calling users service
-func (ser *complaint_service) fetch_emp_count() (int64, error) {
-	// generate auth_token for user id
+func (ser *complaint_service) fetch_clinet_count() (int64, error) {
 	token := ser.jwt_service.GenerateTempToken(utils.TOKEN_ID, "EMP", "SALES")
-	requrl := "http://15.207.19.172:8080/api/emp-count"
+	api_request := proxycalls.NewAPIRequest("count-clients", http.MethodGet, false, nil, nil, map[string]string{"Authorization": token})
 
-	request, _ := http.NewRequest(http.MethodGet, requrl, nil)
-	request.Close = true
-	request.Header.Set("Authorization", token)
-
-	response, err := http.DefaultClient.Do(request)
-
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			return
-		}
-	}()
+	response, err := api_request.MakeApiRequest()
 
 	if err != nil {
+
 		return 0, err
 	}
+	fmt.Println("Response status code : ", response.StatusCode)
+	//var response_data map[string]interface{}
 
-	if response.StatusCode == http.StatusOK {
-		response_data := struct {
-			Status    bool   `json:"status"`
-			Message   string `json:"message"`
-			Err       string `json:"error"`
-			DataCount int64  `json:"data_count"`
-		}{}
-
-		json.NewDecoder(response.Body).Decode(&response_data)
-
-		return response_data.DataCount, nil
-
-	}
-
-	return 0, nil
+	return 10, nil
 }
 
 // fetch complaints by clients
-func (ser *complaint_service) FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) ([]dto.ComplaintInfoDTO, error) {
-	args := db.FetchComplaintsByClientParams{
-		ClientID: req.ClientId,
-		Limit:    req.PageSize,
-		Offset:   (req.PageID - 1) * req.PageSize,
-	}
-
+func (ser *complaint_service) FetchComplaintsByClient(req dto.FetchComplaintsByClientRequestDTO) (dto.ComplaintByClientDTO, error) {
 	wg := sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(3)
+	err_chan := make(chan error)
+	var result dto.ComplaintByClientDTO
+
+	go func() {
+		defer wg.Done()
+		args := db.FetchComplaintsByClientParams{
+			ClientID: req.ClientId,
+			Limit:    req.PageSize,
+			Offset:   (req.PageID - 1) * req.PageSize,
+		}
+
+		complaints, err := ser.complaint_repo.FetchComplaintsByClient(args)
+
+		if err != nil {
+			err_chan <- err
+			return
+		}
+
+		if len(complaints) == 0 {
+			err_chan <- sql.ErrNoRows
+			return
+		}
+
+		complaint_info := make([]dto.ComplaintInfoDTO, len((complaints)))
+		for i, data := range complaints {
+			a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
+			complaint_info[i] = dto.ComplaintInfoDTO{
+				ID:                  data.ID_2,
+				ComplaintID:         data.ID,
+				DeviceID:            data.DeviceID,
+				ProblemStatement:    data.ProblemStatement,
+				ProblemCategory:     data.ProblemCategory.String,
+				ClientAvailableDate: a_date,
+				ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+				ComplaintAddress:    data.ComplaintAddress.String,
+				Status:              data.Status,
+				CreatedAt:           data.CreatedAt,
+				UpdatedAt:           data.UpdatedAt,
+				DeviceType:          data.DeviceType.String,
+				DeviceModel:         data.DeviceModel.String,
+			}
+		}
+
+		result.ComplaintInfo = complaint_info
+	}()
+
 	go func() {
 		defer wg.Done()
 		count, _ := ser.complaint_repo.CountComplaintByClient(req.ClientId)
 		helper.SetPaginationData(int(req.PageID), count)
 	}()
 
-	complaints, err := ser.complaint_repo.FetchComplaintsByClient(args)
+	go func() {
+		defer wg.Done()
+		client_data, err := ser.Fetch_client_info(req.ClientId)
 
-	if err != nil {
-		return nil, err
-	}
-
-	if len(complaints) == 0 {
-		return nil, sql.ErrNoRows
-	}
-	wg.Wait()
-
-	result := make([]dto.ComplaintInfoDTO, len(complaints))
-
-	for i, data := range complaints {
-		a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
-
-		result[i] = dto.ComplaintInfoDTO{
-			ID:                  data.ID_2,
-			ComplaintID:         data.ID,
-			DeviceID:            data.DeviceID,
-			ProblemStatement:    data.ProblemStatement,
-			ProblemCategory:     data.ProblemCategory.String,
-			ClientAvailableDate: a_date,
-			ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
-			ComplaintAddress:    data.ComplaintAddress.String,
-			Status:              data.Status,
-			CreatedAt:           data.CreatedAt,
-			UpdatedAt:           data.UpdatedAt,
-			DeviceType:          data.DeviceType.String,
-			DeviceModel:         data.DeviceModel.String,
+		if err != nil {
+			err_chan <- err
+			return
 		}
+		result.ClientInfo = client_data
+	}()
+
+	go func() {
+		wg.Wait()
+		close(err_chan)
+	}()
+
+	for data_err := range err_chan {
+		return dto.ComplaintByClientDTO{}, data_err
 	}
+
 	return result, nil
 }
 

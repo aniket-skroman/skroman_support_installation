@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	proxycalls "github.com/aniket-skroman/skroman_support_installation/apis/proxy_calls"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/google/uuid"
 )
@@ -81,13 +80,13 @@ type AllComplaintsCount struct {
 	PendingComplaints   int64             `json:"pending_complaints"`
 	CompletedComplaints int64             `json:"completed_complaints"`
 	AllocatedComplaints int64             `json:"allocated_complaints"`
-	EmpCount            int64             `json:"emp_count"`
+	EmpCount            int64             `json:"client_count"`
 	MonthWiseCounts     []MonthWiseCounts `json:"month_data"`
 }
 
 type ComplaintInfoByComplaintDTO struct {
-	ClientInfo    proxycalls.ClientInfoDTO `json:"client_info"`
-	ComplaintInfo ComplaintFullDetailsDTO  `json:"complaint_info"`
+	ClientInfo    interface{}             `json:"client_info"`
+	ComplaintInfo ComplaintFullDetailsDTO `json:"complaint_info"`
 }
 
 type ComplaintFullDetailsDTO struct {
@@ -109,6 +108,11 @@ type ComplaintFullDetailsDTO struct {
 	DeviceImages           []ComplaintDeviceImagesDTO `json:"device_images"`
 	DeviceVideos           []ComplaintDeviceImagesDTO `json:"device_videos"`
 	AllocatedEmpDetailsDTO AllocatedEmpDetailsDTO     `json:"allocation_info"`
+}
+
+type ComplaintByClientDTO struct {
+	ClientInfo    interface{}        `json:"client_info"`
+	ComplaintInfo []ComplaintInfoDTO `json:"complaint_info"`
 }
 
 type ComplaintInfoDTO struct {
@@ -177,8 +181,8 @@ func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.Compla
 // ----------------------------------------- CLIENT REGISTRATION  ------------------------------------------------ //
 type ClientRegistration struct {
 	UserName    string `json:"userName" binding:"required"`
-	Email       string `json:"emailId" binding:"required"`
-	Contact     string `json:"mobileNumber" binding:"required"`
+	Email       string `json:"emailId" binding:"required,email"`
+	Contact     string `json:"mobileNumber" binding:"required,min=10"`
 	AddressLine string `json:"address1" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	State       string `json:"state" binding:"required"`
