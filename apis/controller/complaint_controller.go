@@ -184,11 +184,6 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 		return
 	}
 
-	// s3_connection := connections.NewS3Connection()
-	// path, err := s3_connection.UploadDeviceImageNew(file, handler)
-
-	// fmt.Println("File Path : ", path, err)
-
 	tempFile, err := ioutil.TempFile("media", "upload-*.png")
 
 	if err != nil {
@@ -222,6 +217,10 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 			return
 		} else if strings.Contains(err.Error(), "completed complaint") {
 			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+			return
+		} else if err == sql.ErrNoRows {
+			cont.response = utils.BuildFailedResponse("complaint not found")
+			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
