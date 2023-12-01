@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
@@ -53,11 +52,8 @@ func (repo *complaint_repository) CountComplaints(status string) (sql.Result, er
 func (repo *complaint_repository) TotalComplaints() (int64, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
-	result, err := repo.db.Queries.TotalComplaintCount(ctx)
 
-	fmt.Print("Total Complaint repo called..", result, err)
-
-	return result, err
+	return repo.db.Queries.TotalComplaintCount(ctx)
 }
 
 func (repo *complaint_repository) FetchComplaintDetailByComplaint(complaint_id uuid.UUID) (db.FetchComplaintDetailByComplaintRow, error) {

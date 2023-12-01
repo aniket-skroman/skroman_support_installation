@@ -18,6 +18,7 @@ type S3Connection interface {
 	GetBucketName() string
 	UploadDeviceImage(file_path string) (*s3.PutObjectOutput, string, error)
 	UploadDeviceVideo(file multipart.File, handler *multipart.FileHeader) (string, error)
+	UploadDeviceImageNew(file multipart.File, handler *multipart.FileHeader) (string, error)
 	DeleteFiles(file_path string) error
 }
 
@@ -72,11 +73,20 @@ func (s3_bucket *s3_connection) UploadDeviceImage(file_path string) (*s3.PutObje
 		return nil, "", err
 	}
 	defer file.Close()
-	fileInfo, _ := file.Stat()
+	fileInfo, err := file.Stat()
+
+	if err != nil {
+		return nil, "", err
+	}
+
 	size := fileInfo.Size()
 	buffer := make([]byte, size) // read file content to buffer
 
-	file.Read(buffer)
+	_, err = file.Read(buffer)
+	if err != nil {
+		return nil, "", err
+	}
+
 	fileBytes := bytes.NewReader(buffer)
 	fileType := http.DetectContentType(buffer)
 	path := file.Name()
@@ -110,6 +120,30 @@ func (s3_bucket *s3_connection) UploadDeviceVideo(file multipart.File, handler *
 		Bucket: aws.String(s3_bucket.GetBucketName()), // Bucket to be used
 		Key:    aws.String(file_name),                 // Name of the file to be saved
 		Body:   file,                                  // File
+	})
+
+	return file_name, err
+}
+func (s3_bucket *s3_connection) UploadDeviceImageNew(file multipart.File, handler *multipart.FileHeader) (string, error) {
+	defer file.Close()
+
+	file_name := handler.Filename
+
+	sess, err := s3_bucket.MakeNewSession()
+
+	if err != nil {
+		return "", err
+	}
+
+	uploader := s3manager.NewUploader(sess)
+
+	file_name = "media/" + file_name
+
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s3_bucket.GetBucketName()), // Bucket to be used
+		Key:    aws.String(file_name),                 // Name of the file to be saved
+		Body:   file,                                  // File
+
 	})
 
 	return file_name, err

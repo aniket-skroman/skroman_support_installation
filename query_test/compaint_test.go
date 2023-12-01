@@ -434,7 +434,6 @@ func TestFetchAllCounts(t *testing.T) {
 	fmt.Println("Pending Complaints : ", counts.PendingComplaints)
 	fmt.Println("Completed Complaints : ", counts.ComletedComplaints)
 	fmt.Println("Allocated Complaints : ", counts.AllocatedComplaints)
-	// fmt.Println("Monthly Complaints : ", counts.AllocatedComplaints)
 
 }
 

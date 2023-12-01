@@ -34,9 +34,6 @@ type ComplaintController interface {
 	FetchAllComplaintCounts(ctx *gin.Context)
 	FetchComplaintsByClient(ctx *gin.Context)
 
-	ClientRegistration(*gin.Context)
-	DeleteClient(*gin.Context)
-
 	FetchPDFFile(ctx *gin.Context)
 }
 
@@ -186,6 +183,11 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 		ctx.JSON(http.StatusRequestEntityTooLarge, cont.response)
 		return
 	}
+
+	// s3_connection := connections.NewS3Connection()
+	// path, err := s3_connection.UploadDeviceImageNew(file, handler)
+
+	// fmt.Println("File Path : ", path, err)
 
 	tempFile, err := ioutil.TempFile("media", "upload-*.png")
 
@@ -435,31 +437,6 @@ func (cont *complaint_controller) FetchAllComplaintCounts(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (cont *complaint_controller) ClientRegistration(ctx *gin.Context) {
-	var req dto.ClientRegistration
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
-		ctx.JSON(http.StatusBadRequest, cont.response)
-		return
-	}
-
-	err := cont.comp_serv.ClientRegistration(req)
-
-	if err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
-		if err == helper.Err_Invalid_Input {
-			ctx.JSON(http.StatusBadRequest, cont.response)
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
-	}
-
-	cont.response = utils.BuildSuccessResponse(utils.USER_REGISTRATION_SUCCESS, utils.COMPLAINT_DATA, utils.EmptyObj{})
-	ctx.JSON(http.StatusCreated, cont.response)
-}
-
 func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
 	var req dto.FetchComplaintsByClientRequestDTO
 
@@ -484,31 +461,5 @@ func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
-	ctx.JSON(http.StatusOK, cont.response)
-}
-
-/* delete a client means simply deactivate a account */
-func (cont *complaint_controller) DeleteClient(ctx *gin.Context) {
-	client_id := ctx.Param("client_id")
-
-	if client_id == "" {
-		cont.response = utils.RequestParamsMissingResponse("provide a required params")
-		ctx.JSON(http.StatusBadRequest, cont.response)
-		return
-	}
-
-	err := cont.comp_serv.DeleteClient(client_id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			cont.response = utils.BuildFailedResponse("user not found to delete")
-			ctx.JSON(http.StatusNotFound, cont.response)
-			return
-		}
-
-		cont.response = utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
-	}
-	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, nil)
 	ctx.JSON(http.StatusOK, cont.response)
 }

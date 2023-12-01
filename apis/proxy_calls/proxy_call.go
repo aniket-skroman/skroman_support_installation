@@ -59,15 +59,3 @@ func (pc *ProxyCalls) MakeApiRequest() (*http.Response, error) {
 
 	return response, err
 }
-
-func (procall *ProxyCalls) MakeRequestWithBody() (*http.Response, error) {
-	request, err := http.NewRequest(procall.RequestMethod, BASE_URL+procall.ReqEndpoint, bytes.NewReader(procall.RequestBody))
-	if err != nil {
-		return nil, err
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-
-	response, err := http.DefaultClient.Do(request)
-	return response, err
-}
