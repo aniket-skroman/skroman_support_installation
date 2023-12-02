@@ -53,10 +53,17 @@ func NewComplaintService(repo repositories.ComplaintRepository, serv JWTService,
 }
 
 func (ser *complaint_service) CreateComplaint(req dto.CreateComplaintRequestDTO) (interface{}, error) {
+
+	created_by, err := uuid.Parse(utils.TOKEN_ID)
+
+	if err != nil {
+		return nil, helper.ERR_INVALID_ID
+	}
+
 	//init a complaint first
 	comp_args := db.CreateComplaintParams{
 		ClientID:  req.ClientID,
-		CreatedBy: uuid.New(),
+		CreatedBy: created_by,
 	}
 	complaint, err := ser.complaint_repo.CreateComplaint(comp_args)
 
@@ -171,7 +178,6 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 		defer wg.Done()
 
 		client_info, err := ser.Fetch_client_info(complaint_info.Client.(string))
-		fmt.Println("Client Data : ", client_info, err, complaint_info.Client)
 		if err != nil {
 			result.ClientInfo = nil
 		} else {
@@ -243,7 +249,7 @@ func (ser *complaint_service) FetchDeviceImagesByComplaintId(complaint_info_id s
 	}
 
 	if len(result) == 0 {
-		return nil, nil, errors.New("device image/video not found")
+		return nil, nil, helper.Err_Data_Not_Found
 	}
 
 	device_images := []dto.ComplaintDeviceImagesDTO{}
@@ -271,7 +277,7 @@ func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info
 	complaint_obj_id, err := uuid.Parse(complaint_info_id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
@@ -282,9 +288,9 @@ func (ser *complaint_service) UploadDeviceImage(file_path string, complaint_info
 	}
 
 	if status == "COMPLETE" {
-		// if status is complete then remove the temp file
+		// if status is complete then remove the temp file, no need to update/insert
 		ser.remove_local_files(file_path)
-		return errors.New("completed complaint will not be updated")
+		return helper.Err_Update_Failed
 	}
 
 	// upload a image in s3 bucket first
@@ -320,7 +326,7 @@ func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *mu
 	complaint_obj_id, err := uuid.Parse(complaint_info_id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
@@ -331,7 +337,8 @@ func (ser *complaint_service) UploadDeviceVideo(file multipart.File, handler *mu
 	}
 
 	if status == "COMPLETE" {
-		return errors.New("completed complaint will not be updated")
+		// will not allow to update a any thing
+		return helper.Err_Update_Failed
 	}
 
 	// upload a image in s3 bucket first
@@ -358,7 +365,7 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 	complaint_obj_id, err := uuid.Parse(req.ComplaintInfoId)
 
 	if err != nil {
-		return dto.ComplaintInfoDTO{}, err
+		return dto.ComplaintInfoDTO{}, helper.ERR_INVALID_ID
 	}
 
 	// chech complaint is not COMPLETE, it should be in INIT or ALLOCATE
@@ -369,7 +376,7 @@ func (ser *complaint_service) UpdateComplaintInfo(req dto.UpdateComplaintRequest
 	}
 
 	if status == "COMPLETE" {
-		return dto.ComplaintInfoDTO{}, errors.New("completed complaint will not be updated")
+		return dto.ComplaintInfoDTO{}, helper.Err_Update_Failed
 	}
 
 	available_date, err := time.Parse("2006-01-02", req.ClientAvailableDate)
@@ -416,7 +423,7 @@ func (ser *complaint_service) ComplaintResolve(complaint_id string) error {
 	complanint_obj, err := helper.ValidateUUID(complaint_id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	args := db.UpdateComplaintStatusParams{
@@ -447,7 +454,7 @@ func (ser *complaint_service) DeleteDeviceFiles(file_id string) error {
 	file_obj_id, err := uuid.Parse(file_id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// fetch device file details first
@@ -470,7 +477,7 @@ func (ser *complaint_service) DeleteDeviceFiles(file_id string) error {
 	}
 
 	if affected_rows == 0 {
-		return errors.New("failed to delete device file")
+		return helper.Err_Delete_Failed
 	}
 
 	// delete file from storage
@@ -484,7 +491,7 @@ func (ser *complaint_service) DeleteComplaint(complaint_id string) error {
 	complaint_obj, err := helper.ValidateUUID(complaint_id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// check this complaint id is exists or not
@@ -652,7 +659,7 @@ func (ser *complaint_service) FetchComplaintById(complaint_id string) (db.FetchC
 	complaint_obj, err := helper.ValidateUUID(complaint_id)
 
 	if err != nil {
-		return db.FetchComplaintByComplaintIdRow{}, err
+		return db.FetchComplaintByComplaintIdRow{}, helper.ERR_INVALID_ID
 	}
 
 	return ser.complaint_repo.FetchComplaintById(complaint_obj)

@@ -113,7 +113,6 @@ func Handle_required_param_error(err error) string {
 }
 
 func msgForTag(tag string) string {
-	fmt.Println("New Tag found : ", tag)
 	switch tag {
 	case "required":
 		return "This field is required"
@@ -121,8 +120,11 @@ func msgForTag(tag string) string {
 		return "Invalid email"
 	case "min":
 		return "Invalid length for param"
+	case "oneof":
+		return "invalid param detected"
+	default:
+		return Err_Something_Wents_Wrong.Error()
 	}
-	return ""
 }
 
 var key = "skroman-user-servi-12345"

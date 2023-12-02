@@ -29,17 +29,17 @@ func NewComplaintAllocationService(repo repositories.ComplaintAllocationReposito
 func (ser *allocation_service) AllocateComplaint(req dto.CreateAllocationRequestDTO) error {
 	complaint_obj, err := helper.ValidateUUID(req.ComplaintId)
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	allocate_by, err := helper.ValidateUUID(req.AllocateBy)
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	allocate_to, err := helper.ValidateUUID(req.AllocateTo)
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// check this complaint should not allocated before
@@ -73,16 +73,16 @@ func (ser *allocation_service) UpdateComplaintAllocation(req dto.UpdateAllocateC
 	id, err := helper.ValidateUUID(req.Id)
 
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 	allocate_to, err := helper.ValidateUUID(req.AllocateTo)
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	allocate_by, err := helper.ValidateUUID(req.AllocateBy)
 	if err != nil {
-		return err
+		return helper.ERR_INVALID_ID
 	}
 
 	// check the complaint status, it should be init/allocate should not be complete

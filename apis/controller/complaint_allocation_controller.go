@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type ComplaintAllocationController interface {
@@ -35,7 +33,7 @@ func (cont *allocation_controller) AllocateComplaint(ctx *gin.Context) {
 	var req dto.CreateAllocationRequestDTO
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		cont.response = utils.RequestParamsMissingResponse(helper.Error_handler(err))
+		cont.response = utils.RequestParamsMissingResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -54,8 +52,7 @@ func (cont *allocation_controller) AllocateComplaint(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-		if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse("invalid params has been requested")
+		if err == helper.ERR_INVALID_ID {
 			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
 		} else if strings.Contains(err.Error(), "already allocated") {
@@ -93,12 +90,11 @@ func (cont *allocation_controller) UpdateAllocateComplaint(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-		if errors.Is(err, sql.ErrNoRows) {
+		if err == sql.ErrNoRows {
 			cont.response = utils.BuildFailedResponse("invalid allocation detect")
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
-		} else if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse("invalid params has been requested")
+		} else if err == helper.ERR_INVALID_ID {
 			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
 		} else if strings.Contains(err.Error(), "completed complaint") {

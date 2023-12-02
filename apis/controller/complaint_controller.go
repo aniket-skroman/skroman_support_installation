@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"path"
-	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
@@ -61,6 +60,10 @@ func (cont *complaint_controller) CreateComplaint(ctx *gin.Context) {
 	complaint_info, err := cont.comp_serv.CreateComplaint(req)
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
+		if err == helper.ERR_INVALID_ID {
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
@@ -73,7 +76,7 @@ func (cont *complaint_controller) FetchAllComplaints(ctx *gin.Context) {
 	var req dto.PaginationRequestParams
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -82,8 +85,8 @@ func (cont *complaint_controller) FetchAllComplaints(ctx *gin.Context) {
 
 	if err != nil {
 
-		if errors.Is(err, sql.ErrNoRows) {
-			cont.response = utils.BuildFailedResponse("complaints not found")
+		if err == sql.ErrNoRows {
+			cont.response = utils.BuildFailedResponse(helper.Err_Data_Not_Found.Error())
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
@@ -108,7 +111,7 @@ func (cont *complaint_controller) FetchComplaintDetailByComplaint(ctx *gin.Conte
 	obj_id, err := uuid.Parse(complaint_id)
 
 	if err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.ERR_INVALID_ID.Error())
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -167,13 +170,13 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 	complaint_info_id := ctx.PostForm("complaint_info_id")
 
 	if err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
 
 	if complaint_info_id == "" {
-		cont.response = utils.BuildFailedResponse("invalid comaplaint id")
+		cont.response = utils.BuildFailedResponse(helper.ERR_INVALID_ID.Error())
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -210,21 +213,22 @@ func (cont *complaint_controller) UploadDeviceImage(ctx *gin.Context) {
 	err = cont.comp_serv.UploadDeviceImage(tempFile.Name(), complaint_info_id)
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-
-		if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
-			ctx.JSON(http.StatusConflict, cont.response)
+		switch err {
+		case helper.ERR_INVALID_ID:
+			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
-		} else if strings.Contains(err.Error(), "completed complaint") {
-			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
+		case helper.Err_Update_Failed:
+			ctx.JSON(http.StatusForbidden, cont.response)
 			return
-		} else if err == sql.ErrNoRows {
+		case sql.ErrNoRows:
 			cont.response = utils.BuildFailedResponse("complaint not found")
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, cont.response)
+			return
 		}
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
+
 	}
 
 	cont.response = utils.BuildSuccessResponse("File upload successfully", utils.COMPLAINT_DATA, utils.EmptyObj{})
@@ -236,7 +240,7 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 	complaint_info_id := ctx.PostForm("complaint_info_id")
 
 	if err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -251,20 +255,22 @@ func (cont *complaint_controller) UploadDeviceVideo(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-		if uuid.IsInvalidLengthError(err) {
+		switch err {
+		case helper.ERR_INVALID_ID:
 			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
 			ctx.JSON(http.StatusConflict, cont.response)
 			return
-		} else if strings.Contains(err.Error(), "completed complaint") {
+		case helper.Err_Update_Failed:
 			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
 			return
-		} else if errors.Is(err, sql.ErrNoRows) {
+		case sql.ErrNoRows:
 			cont.response = utils.BuildFailedResponse("complaint not found to upload video")
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, cont.response)
+			return
 		}
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
 	}
 
 	cont.response = utils.BuildSuccessResponse("Video has been upload successfully", utils.COMPLAINT_DATA, handler.Filename)
@@ -284,16 +290,17 @@ func (cont *complaint_controller) UpdateComplaintInfo(ctx *gin.Context) {
 
 	if err != nil {
 		cont.response = utils.BuildFailedResponse(err.Error())
-		if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
-			ctx.JSON(http.StatusConflict, cont.response)
+		switch err {
+		case helper.ERR_INVALID_ID:
+			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
-		} else if strings.Contains(err.Error(), "completed complaint") {
+		case helper.Err_Update_Failed:
 			ctx.JSON(http.StatusUnprocessableEntity, cont.response)
 			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, cont.response)
+			return
 		}
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
 	}
 
 	cont.response = utils.BuildSuccessResponse(utils.UPDATE_SUCCESS, utils.COMPLAINT_DATA, result)
@@ -352,19 +359,21 @@ func (cont *complaint_controller) DeleteDeviceFiles(ctx *gin.Context) {
 	err := cont.comp_serv.DeleteDeviceFiles(device_file_id)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+
+		switch err {
+		case sql.ErrNoRows:
 			cont.response = utils.BuildFailedResponse("device file not found")
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
-
-		} else if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
-			ctx.JSON(http.StatusConflict, cont.response)
+		case helper.ERR_INVALID_ID:
+			cont.response = utils.BuildFailedResponse(helper.ERR_INVALID_ID.Error())
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		default:
+			cont.response = utils.BuildFailedResponse(err.Error())
+			ctx.JSON(http.StatusInternalServerError, cont.response)
 			return
 		}
-		cont.response = utils.BuildFailedResponse(err.Error())
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
 	}
 
 	cont.response = utils.BuildSuccessResponse(utils.DELETE_SUCCESS, utils.COMPLAINT_DATA, device_file_id)
@@ -383,11 +392,11 @@ func (cont *complaint_controller) DeleteComplaint(ctx *gin.Context) {
 	err := cont.comp_serv.DeleteComplaint(complaint_id)
 
 	if err != nil {
-		if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
-			ctx.JSON(http.StatusConflict, cont.response)
+		if err == helper.ERR_INVALID_ID {
+			cont.response = utils.BuildFailedResponse(helper.ERR_INVALID_ID.Error())
+			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
-		} else if errors.Is(err, sql.ErrNoRows) {
+		} else if err == sql.ErrNoRows {
 			cont.response = utils.BuildFailedResponse(utils.DATA_NOT_FOUND)
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
@@ -414,13 +423,11 @@ func (cont *complaint_controller) ComplaintResolve(ctx *gin.Context) {
 	err := cont.comp_serv.ComplaintResolve(complaint_id)
 
 	if err != nil {
-		if uuid.IsInvalidLengthError(err) {
-			cont.response = utils.BuildFailedResponse(utils.INVALID_PARAMS)
-			ctx.JSON(http.StatusConflict, cont.response)
+		cont.response = utils.BuildFailedResponse(err.Error())
+		if err == helper.ERR_INVALID_ID {
+			ctx.JSON(http.StatusBadRequest, cont.response)
 			return
 		}
-
-		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
@@ -440,7 +447,7 @@ func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
 	var req dto.FetchComplaintsByClientRequestDTO
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
@@ -448,13 +455,17 @@ func (cont *complaint_controller) FetchComplaintsByClient(ctx *gin.Context) {
 	complaint_info, err := cont.comp_serv.FetchComplaintsByClient(req)
 
 	if err != nil {
+		cont.response = utils.BuildFailedResponse(err.Error())
 
-		if errors.Is(err, sql.ErrNoRows) {
+		if err == helper.ERR_INVALID_ID {
+			ctx.JSON(http.StatusBadRequest, cont.response)
+			return
+		} else if err == sql.ErrNoRows {
 			cont.response = utils.BuildFailedResponse("complaints not found")
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
-		cont.response = utils.BuildFailedResponse(err.Error())
+
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
