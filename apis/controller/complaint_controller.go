@@ -90,12 +90,16 @@ func (cont *complaint_controller) FetchAllComplaints(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, cont.response)
 			return
 		}
+
 		cont.response = utils.BuildFailedResponse(err.Error())
 		ctx.JSON(http.StatusInternalServerError, cont.response)
 		return
 	}
 
+	ctx.Errors = append(ctx.Errors, &gin.Error{Err: sql.ErrNoRows})
+
 	cont.response = utils.BuildResponseWithPagination(utils.FETCHED_SUCCESS, "", utils.COMPLAINT_DATA, complaint_info)
+	log.Println("Returning from fuction context")
 	ctx.JSON(http.StatusOK, cont.response)
 }
 
