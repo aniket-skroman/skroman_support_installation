@@ -121,6 +121,7 @@ type ComplaintInfoDTO struct {
 	ProblemCategory     string    `json:"problem_category"`
 	ClientAvailableDate string    `json:"client_available_date" binding:"required"`
 	ClientTimeSlots     string    `json:"available_time_slots" binding:"required"`
+	ClientContact       string    `json:"client_contact"`
 	ComplaintAddress    string    `json:"complaint_address"`
 	Status              string    `json:"status"`
 	CreatedAt           time.Time `json:"created_at"`

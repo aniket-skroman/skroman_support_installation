@@ -231,9 +231,17 @@ func (q *Queries) DeleteDeviceFiles(ctx context.Context, id uuid.UUID) (sql.Resu
 }
 
 const fetchAllComplaints = `-- name: FetchAllComplaints :many
-select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
-where status =$3
-order by created_at desc 
+select ci.id, ci.complaint_id, ci.device_id, ci.problem_statement, ci.problem_category, ci.client_available, ci.status, ci.created_at, ci.updated_at, ci.device_type, ci.device_model, ci.client_available_date, ci.client_available_time_slot, ci.complaint_address,
+(
+    case 
+        when c.client_id <> '' then c.client_id else 'Default'
+    end    
+)as client_id
+from complaints as c
+left join  complaint_info as ci
+on c.id = ci.complaint_id
+where ci.status = $3
+order by ci.created_at desc 
 limit $1
 offset $2
 `
@@ -244,16 +252,34 @@ type FetchAllComplaintsParams struct {
 	Status string `json:"status"`
 }
 
+type FetchAllComplaintsRow struct {
+	ID                      uuid.NullUUID  `json:"id"`
+	ComplaintID             uuid.NullUUID  `json:"complaint_id"`
+	DeviceID                sql.NullString `json:"device_id"`
+	ProblemStatement        sql.NullString `json:"problem_statement"`
+	ProblemCategory         sql.NullString `json:"problem_category"`
+	ClientAvailable         sql.NullTime   `json:"client_available"`
+	Status                  sql.NullString `json:"status"`
+	CreatedAt               sql.NullTime   `json:"created_at"`
+	UpdatedAt               sql.NullTime   `json:"updated_at"`
+	DeviceType              sql.NullString `json:"device_type"`
+	DeviceModel             sql.NullString `json:"device_model"`
+	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
+	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
+	ClientID                string         `json:"client_id"`
+}
+
 // fetching a complaint by status like allocate, init etc
-func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaintsParams) ([]ComplaintInfo, error) {
+func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaintsParams) ([]FetchAllComplaintsRow, error) {
 	rows, err := q.db.QueryContext(ctx, fetchAllComplaints, arg.Limit, arg.Offset, arg.Status)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ComplaintInfo{}
+	items := []FetchAllComplaintsRow{}
 	for rows.Next() {
-		var i ComplaintInfo
+		var i FetchAllComplaintsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ComplaintID,
@@ -269,6 +295,7 @@ func (q *Queries) FetchAllComplaints(ctx context.Context, arg FetchAllComplaints
 			&i.ClientAvailableDate,
 			&i.ClientAvailableTimeSlot,
 			&i.ComplaintAddress,
+			&i.ClientID,
 		); err != nil {
 			return nil, err
 		}
@@ -560,8 +587,16 @@ func (q *Queries) FetchDeviceImagesByComplaintId(ctx context.Context, complaintI
 }
 
 const fetchTotalComplaints = `-- name: FetchTotalComplaints :many
-select id, complaint_id, device_id, problem_statement, problem_category, client_available, status, created_at, updated_at, device_type, device_model, client_available_date, client_available_time_slot, complaint_address from complaint_info
-order by created_at desc
+select ci.id, ci.complaint_id, ci.device_id, ci.problem_statement, ci.problem_category, ci.client_available, ci.status, ci.created_at, ci.updated_at, ci.device_type, ci.device_model, ci.client_available_date, ci.client_available_time_slot, ci.complaint_address,
+(
+    case 
+        when c.client_id <> '' then c.client_id else 'Default'
+    end    
+)as client_id
+from complaints as c
+join  complaint_info as ci
+on c.id = ci.complaint_id
+order by ci.created_at desc 
 limit $1
 offset $2
 `
@@ -571,16 +606,34 @@ type FetchTotalComplaintsParams struct {
 	Offset int32 `json:"offset"`
 }
 
+type FetchTotalComplaintsRow struct {
+	ID                      uuid.UUID      `json:"id"`
+	ComplaintID             uuid.UUID      `json:"complaint_id"`
+	DeviceID                string         `json:"device_id"`
+	ProblemStatement        string         `json:"problem_statement"`
+	ProblemCategory         sql.NullString `json:"problem_category"`
+	ClientAvailable         time.Time      `json:"client_available"`
+	Status                  string         `json:"status"`
+	CreatedAt               time.Time      `json:"created_at"`
+	UpdatedAt               time.Time      `json:"updated_at"`
+	DeviceType              sql.NullString `json:"device_type"`
+	DeviceModel             sql.NullString `json:"device_model"`
+	ClientAvailableDate     sql.NullTime   `json:"client_available_date"`
+	ClientAvailableTimeSlot sql.NullString `json:"client_available_time_slot"`
+	ComplaintAddress        sql.NullString `json:"complaint_address"`
+	ClientID                string         `json:"client_id"`
+}
+
 // fetching all complaint
-func (q *Queries) FetchTotalComplaints(ctx context.Context, arg FetchTotalComplaintsParams) ([]ComplaintInfo, error) {
+func (q *Queries) FetchTotalComplaints(ctx context.Context, arg FetchTotalComplaintsParams) ([]FetchTotalComplaintsRow, error) {
 	rows, err := q.db.QueryContext(ctx, fetchTotalComplaints, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ComplaintInfo{}
+	items := []FetchTotalComplaintsRow{}
 	for rows.Next() {
-		var i ComplaintInfo
+		var i FetchTotalComplaintsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ComplaintID,
@@ -596,6 +649,7 @@ func (q *Queries) FetchTotalComplaints(ctx context.Context, arg FetchTotalCompla
 			&i.ClientAvailableDate,
 			&i.ClientAvailableTimeSlot,
 			&i.ComplaintAddress,
+			&i.ClientID,
 		); err != nil {
 			return nil, err
 		}

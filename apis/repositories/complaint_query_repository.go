@@ -25,7 +25,7 @@ func (repo *complaint_repository) CreateComplaintInfo(args db.CreateComplaintInf
 }
 
 // complaint by status
-func (repo *complaint_repository) FetchAllComplaints(args db.FetchAllComplaintsParams) ([]db.ComplaintInfo, error) {
+func (repo *complaint_repository) FetchAllComplaints(args db.FetchAllComplaintsParams) ([]db.FetchAllComplaintsRow, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
 
@@ -33,7 +33,7 @@ func (repo *complaint_repository) FetchAllComplaints(args db.FetchAllComplaintsP
 }
 
 // fetching all complaint
-func (repo *complaint_repository) FetchTotalComplaints(args db.FetchTotalComplaintsParams) ([]db.ComplaintInfo, error) {
+func (repo *complaint_repository) FetchTotalComplaints(args db.FetchTotalComplaintsParams) ([]db.FetchTotalComplaintsRow, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
 

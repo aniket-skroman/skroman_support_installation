@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -118,18 +119,13 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		count, err := ser.count_complaints(req.TagKey)
-
-		if err != nil {
-			helper.SetPaginationData(int(req.PageID), 0)
-		} else {
-			helper.SetPaginationData(int(req.PageID), count)
-		}
+		count, _ := ser.count_complaints(req.TagKey)
+		helper.SetPaginationData(int(req.PageID), count)
 	}()
-	var complaints []db.ComplaintInfo
+	var complaints interface{}
 	var err error
 
 	if req.TagKey == "TOTAL" {
@@ -146,20 +142,117 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 		return nil, err
 	}
 
-	if len(complaints) == 0 {
-		return nil, sql.ErrNoRows
+	result := []dto.ComplaintInfoDTO{}
+	if _, ok := complaints.([]db.FetchAllComplaintsRow); ok {
+		if len(complaints.([]db.FetchAllComplaintsRow)) == 0 {
+			return nil, sql.ErrNoRows
+		}
+
+		result = make([]dto.ComplaintInfoDTO, len(complaints.([]db.FetchAllComplaintsRow)))
+		go func() {
+			defer wg.Done()
+
+			t_wg := sync.WaitGroup{}
+			for i := range complaints.([]db.FetchAllComplaintsRow) {
+				t_wg.Add(2)
+
+				go func(i int) {
+					defer t_wg.Done()
+					if complaints.([]db.FetchAllComplaintsRow)[i].ClientID != "Default" && !strings.HasPrefix(complaints.([]db.FetchAllComplaintsRow)[i].ClientID, "User_id") {
+						client_data, _ := ser.Fetch_client_info(complaints.([]db.FetchAllComplaintsRow)[i].ClientID)
+						if client_data != nil {
+							rv := reflect.ValueOf(client_data)
+							result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
+						}
+					}
+				}(i)
+
+				go func(i int) {
+					ser.setComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchAllComplaintsRow)[i])
+				}(i)
+
+			}
+			t_wg.Wait()
+		}()
+	} else {
+		if len(complaints.([]db.FetchTotalComplaintsRow)) == 0 {
+			return nil, sql.ErrNoRows
+		}
+		go func() {
+			defer wg.Done()
+			result = make([]dto.ComplaintInfoDTO, len(complaints.([]db.FetchTotalComplaintsRow)))
+			t_wg := sync.WaitGroup{}
+
+			for i := range complaints.([]db.FetchTotalComplaintsRow) {
+				t_wg.Add(2)
+
+				go func(i int) {
+					defer t_wg.Done()
+					if complaints.([]db.FetchTotalComplaintsRow)[i].ClientID != "Default" && !strings.HasPrefix(complaints.([]db.FetchTotalComplaintsRow)[i].ClientID, "User_id") {
+						client_data, _ := ser.Fetch_client_info(complaints.([]db.FetchTotalComplaintsRow)[i].ClientID)
+						if client_data != nil {
+							rv := reflect.ValueOf(client_data)
+							result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
+						}
+					}
+				}(i)
+
+				go func(i int) {
+
+					ser.setComplaintInfoDataForTotal(&t_wg, &result[i], &complaints.([]db.FetchTotalComplaintsRow)[i])
+				}(i)
+
+			}
+			t_wg.Wait()
+		}()
 	}
 
-	complaint_info := new(dto.ComplaintInfoDTO).SetComplaintInfoData(complaints...)
+	// set a data to dto class
+
 	wg.Wait()
+	return result, nil
+}
 
-	if _, ok := complaint_info.([]dto.ComplaintInfoDTO); ok {
-		return complaint_info.([]dto.ComplaintInfoDTO), nil
+func (ser *complaint_service) setComplaintInfoData(wg *sync.WaitGroup, result *dto.ComplaintInfoDTO, data *db.FetchAllComplaintsRow) {
+	defer wg.Done()
+	a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+
+	*result = dto.ComplaintInfoDTO{
+		ID:                  data.ID.UUID,
+		ComplaintID:         data.ComplaintID.UUID,
+		DeviceID:            data.DeviceID.String,
+		ProblemStatement:    data.ProblemStatement.String,
+		ProblemCategory:     data.ProblemCategory.String,
+		ClientAvailableDate: a_date,
+		ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+		ComplaintAddress:    data.ComplaintAddress.String,
+		Status:              data.Status.String,
+		CreatedAt:           data.CreatedAt.Time,
+		UpdatedAt:           data.UpdatedAt.Time,
+		DeviceType:          data.DeviceType.String,
+		DeviceModel:         data.DeviceModel.String,
 	}
+}
 
-	s_complaint := complaint_info.(dto.ComplaintInfoDTO)
+func (ser *complaint_service) setComplaintInfoDataForTotal(wg *sync.WaitGroup, result *dto.ComplaintInfoDTO, data *db.FetchTotalComplaintsRow) {
+	defer wg.Done()
+	a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
 
-	return []dto.ComplaintInfoDTO{s_complaint}, nil
+	*result = dto.ComplaintInfoDTO{
+		ID:                  data.ID,
+		ComplaintID:         data.ComplaintID,
+		DeviceID:            data.DeviceID,
+		ProblemStatement:    data.ProblemStatement,
+		ProblemCategory:     data.ProblemCategory.String,
+		ClientAvailableDate: a_date,
+		ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+		ComplaintAddress:    data.ComplaintAddress.String,
+		Status:              data.Status,
+		CreatedAt:           data.CreatedAt,
+		UpdatedAt:           data.UpdatedAt,
+		DeviceType:          data.DeviceType.String,
+		DeviceModel:         data.DeviceModel.String,
+	}
 }
 
 func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.UUID) (dto.ComplaintInfoByComplaintDTO, error) {

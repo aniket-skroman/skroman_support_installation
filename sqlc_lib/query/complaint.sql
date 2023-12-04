@@ -32,16 +32,32 @@ insert into device_images (
 
 /* fetching a complaint by status like allocate, init etc */
 -- name: FetchAllComplaints :many
-select * from complaint_info
-where status =$3
-order by created_at desc 
+select ci.*,
+(
+    case 
+        when c.client_id <> '' then c.client_id else 'Default'
+    end    
+)as client_id
+from complaints as c
+left join  complaint_info as ci
+on c.id = ci.complaint_id
+where ci.status = $3
+order by ci.created_at desc 
 limit $1
 offset $2;
 
 /* fetching all complaint */
 -- name: FetchTotalComplaints :many
-select * from complaint_info
-order by created_at desc
+select ci.*,
+(
+    case 
+        when c.client_id <> '' then c.client_id else 'Default'
+    end    
+)as client_id
+from complaints as c
+join  complaint_info as ci
+on c.id = ci.complaint_id
+order by ci.created_at desc 
 limit $1
 offset $2;
 
