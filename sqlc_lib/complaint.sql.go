@@ -665,7 +665,10 @@ func (q *Queries) FetchTotalComplaints(ctx context.Context, arg FetchTotalCompla
 }
 
 const totalComplaintCount = `-- name: TotalComplaintCount :one
-select count(*) from complaints
+select count(ci.complaint_id)
+from complaints as c
+left join  complaint_info as ci
+on c.id = ci.complaint_id
 `
 
 // count for total complaints

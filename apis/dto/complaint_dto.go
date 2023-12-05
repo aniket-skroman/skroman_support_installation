@@ -1,7 +1,10 @@
 package dto
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
@@ -128,6 +131,57 @@ type ComplaintInfoDTO struct {
 	UpdatedAt           time.Time `json:"updated_at"`
 	DeviceType          string    `json:"device_type"`
 	DeviceModel         string    `json:"device_model"`
+}
+
+type ComplaintInfoData interface {
+	db.FetchAllComplaintsRow | db.FetchTotalComplaintsRow
+}
+
+func SetComplaintInfoData[T ComplaintInfoData](wg *sync.WaitGroup, result *ComplaintInfoDTO, module_data *T) {
+	defer wg.Done()
+	switch any(module_data).(type) {
+	case *db.FetchAllComplaintsRow:
+		data := any(module_data).(*db.FetchAllComplaintsRow)
+		a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+		*result = ComplaintInfoDTO{
+			ID:                  data.ID.UUID,
+			ComplaintID:         data.ComplaintID.UUID,
+			DeviceID:            data.DeviceID.String,
+			ProblemStatement:    data.ProblemStatement.String,
+			ProblemCategory:     data.ProblemCategory.String,
+			ClientAvailableDate: a_date,
+			ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+			ComplaintAddress:    data.ComplaintAddress.String,
+			Status:              data.Status.String,
+			CreatedAt:           data.CreatedAt.Time,
+			UpdatedAt:           data.UpdatedAt.Time,
+			DeviceType:          data.DeviceType.String,
+			DeviceModel:         data.DeviceModel.String,
+		}
+		return
+	case *db.FetchTotalComplaintsRow:
+		data := any(module_data).(*db.FetchTotalComplaintsRow)
+		a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
+		*result = ComplaintInfoDTO{
+			ID:                  data.ID,
+			ComplaintID:         data.ComplaintID,
+			DeviceID:            data.DeviceID,
+			ProblemStatement:    data.ProblemStatement,
+			ProblemCategory:     data.ProblemCategory.String,
+			ClientAvailableDate: a_date,
+			ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
+			ComplaintAddress:    data.ComplaintAddress.String,
+			Status:              data.Status,
+			CreatedAt:           data.CreatedAt,
+			UpdatedAt:           data.UpdatedAt,
+			DeviceType:          data.DeviceType.String,
+			DeviceModel:         data.DeviceModel.String,
+		}
+		return
+	default:
+		fmt.Println("Unknow module data found", reflect.TypeOf(module_data))
+		return
+	}
 }
 
 func (complaint *ComplaintInfoDTO) SetComplaintInfoData(module_data ...db.ComplaintInfo) interface{} {

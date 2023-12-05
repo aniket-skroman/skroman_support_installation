@@ -64,7 +64,11 @@ offset $2;
 
 /* count for total complaints */
 -- name: TotalComplaintCount :one
-select count(*) from complaints;
+select count(ci.complaint_id)
+from complaints as c
+left join  complaint_info as ci
+on c.id = ci.complaint_id
+;
 
 -- name: CountComplaints :execresult
 select * from complaint_info

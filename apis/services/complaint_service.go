@@ -168,7 +168,7 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 				}(i)
 
 				go func(i int) {
-					ser.setComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchAllComplaintsRow)[i])
+					dto.SetComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchAllComplaintsRow)[i])
 				}(i)
 
 			}
@@ -198,8 +198,7 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 				}(i)
 
 				go func(i int) {
-
-					ser.setComplaintInfoDataForTotal(&t_wg, &result[i], &complaints.([]db.FetchTotalComplaintsRow)[i])
+					dto.SetComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchTotalComplaintsRow)[i])
 				}(i)
 
 			}
@@ -207,52 +206,8 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 		}()
 	}
 
-	// set a data to dto class
-
 	wg.Wait()
 	return result, nil
-}
-
-func (ser *complaint_service) setComplaintInfoData(wg *sync.WaitGroup, result *dto.ComplaintInfoDTO, data *db.FetchAllComplaintsRow) {
-	defer wg.Done()
-	a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
-
-	*result = dto.ComplaintInfoDTO{
-		ID:                  data.ID.UUID,
-		ComplaintID:         data.ComplaintID.UUID,
-		DeviceID:            data.DeviceID.String,
-		ProblemStatement:    data.ProblemStatement.String,
-		ProblemCategory:     data.ProblemCategory.String,
-		ClientAvailableDate: a_date,
-		ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
-		ComplaintAddress:    data.ComplaintAddress.String,
-		Status:              data.Status.String,
-		CreatedAt:           data.CreatedAt.Time,
-		UpdatedAt:           data.UpdatedAt.Time,
-		DeviceType:          data.DeviceType.String,
-		DeviceModel:         data.DeviceModel.String,
-	}
-}
-
-func (ser *complaint_service) setComplaintInfoDataForTotal(wg *sync.WaitGroup, result *dto.ComplaintInfoDTO, data *db.FetchTotalComplaintsRow) {
-	defer wg.Done()
-	a_date := strings.ReplaceAll(data.ClientAvailableDate.Time.String(), "00:00:00 +0000 UTC", "")
-
-	*result = dto.ComplaintInfoDTO{
-		ID:                  data.ID,
-		ComplaintID:         data.ComplaintID,
-		DeviceID:            data.DeviceID,
-		ProblemStatement:    data.ProblemStatement,
-		ProblemCategory:     data.ProblemCategory.String,
-		ClientAvailableDate: a_date,
-		ClientTimeSlots:     data.ClientAvailableTimeSlot.String,
-		ComplaintAddress:    data.ComplaintAddress.String,
-		Status:              data.Status,
-		CreatedAt:           data.CreatedAt,
-		UpdatedAt:           data.UpdatedAt,
-		DeviceType:          data.DeviceType.String,
-		DeviceModel:         data.DeviceModel.String,
-	}
 }
 
 func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.UUID) (dto.ComplaintInfoByComplaintDTO, error) {
@@ -270,25 +225,16 @@ func (ser *complaint_service) FetchComplaintDetailByComplaint(complaint_id uuid.
 	go func(client_id string) {
 		defer wg.Done()
 
-		client_info, err := ser.Fetch_client_info(complaint_info.Client.(string))
-		if err != nil {
-			result.ClientInfo = nil
-		} else {
-			result.ClientInfo = client_info
-		}
+		client_info, _ := ser.Fetch_client_info(complaint_info.Client.(string))
+		result.ClientInfo = client_info
 	}(complaint_info.Client.(string))
 
 	// fetch all device images and videos for complaint
 	go func(complaint_info_id string) {
 		defer wg.Done()
-		device_images, device_videos, err := ser.FetchDeviceImagesByComplaintId(complaint_info.ComplaintInfoID.String())
-		if err != nil {
-			result.ComplaintInfo.DeviceImages = []dto.ComplaintDeviceImagesDTO{}
-			result.ComplaintInfo.DeviceVideos = []dto.ComplaintDeviceImagesDTO{}
-		} else {
-			result.ComplaintInfo.DeviceImages = device_images
-			result.ComplaintInfo.DeviceVideos = device_videos
-		}
+		device_images, device_videos, _ := ser.FetchDeviceImagesByComplaintId(complaint_info.ComplaintInfoID.String())
+		result.ComplaintInfo.DeviceImages = device_images
+		result.ComplaintInfo.DeviceVideos = device_videos
 	}(complaint_info.ComplaintInfoID.String())
 
 	go func() {
