@@ -2,11 +2,17 @@ package repositories
 
 import (
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
-	"github.com/google/uuid"
 )
 
-func (repo *installation_user) FetchAllocatedComplaintsByEmp(allocated_id uuid.UUID) ([]db.FetchAllocatedComplaintByEmpRow, error) {
+func (repo *installation_user) FetchAllocatedComplaintsByEmp(args db.FetchAllocatedComplaintByEmpTodayParams) ([]db.FetchAllocatedComplaintByEmpTodayRow, error) {
 	ctx, cancel := repo.Init()
 	defer cancel()
-	return repo.db.Queries.FetchAllocatedComplaintByEmp(ctx, allocated_id)
+	return repo.db.Queries.FetchAllocatedComplaintByEmpToday(ctx, args)
+}
+
+func (repo *installation_user) FetchAllocatedComplaintsByEmpPending(args db.FetchAllocatedComplaintsByEmpPendingParams) ([]db.FetchAllocatedComplaintsByEmpPendingRow, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchAllocatedComplaintsByEmpPending(ctx, args)
 }

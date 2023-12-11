@@ -6,12 +6,12 @@ import (
 
 	"github.com/aniket-skroman/skroman_support_installation/apis"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
-	"github.com/google/uuid"
 )
 
 type InstallationUserRepository interface {
 	Init() (context.Context, context.CancelFunc)
-	FetchAllocatedComplaintsByEmp(allocated_id uuid.UUID) ([]db.FetchAllocatedComplaintByEmpRow, error)
+	FetchAllocatedComplaintsByEmp(args db.FetchAllocatedComplaintByEmpTodayParams) ([]db.FetchAllocatedComplaintByEmpTodayRow, error)
+	FetchAllocatedComplaintsByEmpPending(args db.FetchAllocatedComplaintsByEmpPendingParams) ([]db.FetchAllocatedComplaintsByEmpPendingRow, error)
 }
 
 type installation_user struct {

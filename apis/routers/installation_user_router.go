@@ -23,6 +23,6 @@ func InstallationUserRouter(router *gin.Engine, db *apis.Store) {
 
 	allocated_data := router.Group("/api", middleware.AuthorizeJWT(jwt_service))
 	{
-		allocated_data.GET("/fetch-allocated-complaints/:allocated_to", installation_cont.FetchAllocatedComplaintByEmp)
+		allocated_data.GET("/fetch-allocated-complaints", installation_cont.FetchAllocatedComplaintByEmp)
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
+	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/gin-gonic/gin"
@@ -28,14 +30,15 @@ func NewInstallationUserController(ser services.InstallationUserService) Install
 }
 
 func (cont *installation_cont) FetchAllocatedComplaintByEmp(ctx *gin.Context) {
-	allocated_id := ctx.Param("allocated_to")
+	var req dto.FetchAllocatedComplaintRequestDTO
 
-	if allocated_id == " " {
-		cont.response = utils.BuildFailedResponse("please provide a required params")
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		cont.response = utils.BuildFailedResponse(helper.Handle_required_param_error(err))
 		ctx.JSON(http.StatusBadRequest, cont.response)
 		return
 	}
-	result, err := cont.installation_serv.FetchAllocatedComplaintByEmp(allocated_id)
+
+	result, err := cont.installation_serv.FetchAllocatedComplaintByEmp(req)
 
 	if err != nil {
 		if uuid.IsInvalidLengthError(err) {

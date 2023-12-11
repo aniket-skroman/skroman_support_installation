@@ -15,3 +15,8 @@ type FetchAllocatedComplaintByEmpDTO struct {
 	TimeSlot         string                   `json:"time_slot"`
 	ClientID         string                   `json:"client_id"`
 }
+
+type FetchAllocatedComplaintRequestDTO struct {
+	AllocatedTo   string `form:"allocated_to" binding:"required"`
+	AllocationTag string `form:"allocation_tag" binding:"required,oneof=Today Pending pending today"`
+}
