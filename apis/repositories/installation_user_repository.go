@@ -2,16 +2,21 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
+	"github.com/google/uuid"
 )
 
 type InstallationUserRepository interface {
 	Init() (context.Context, context.CancelFunc)
 	FetchAllocatedComplaintsByEmp(args db.FetchAllocatedComplaintByEmpTodayParams) ([]db.FetchAllocatedComplaintByEmpTodayRow, error)
 	FetchAllocatedComplaintsByEmpPending(args db.FetchAllocatedComplaintsByEmpPendingParams) ([]db.FetchAllocatedComplaintsByEmpPendingRow, error)
+	CreateComplaintProgress(args db.CreateComplaintProgressParams) (db.ComplaintProgress, error)
+	FetchComplaintProgress(args uuid.UUID) ([]db.ComplaintProgress, error)
+	DeleteComplaintProgress(progress_id uuid.UUID) (sql.Result, error)
 }
 
 type installation_user struct {

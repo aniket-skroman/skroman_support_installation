@@ -27,3 +27,43 @@ func TestFetchAllocatedComplaints(t *testing.T) {
 	}
 	require.NotEmpty(t, allocated_complaints)
 }
+
+func createRandomProgress(t *testing.T) {
+
+	complaint_id, _ := uuid.Parse("0a5b9181-9326-40c4-8efe-15542d86f458")
+
+	args := db.CreateComplaintProgressParams{
+		ComplaintID:       complaint_id,
+		ProgressStatement: "test statement",
+		StatementBy:       uuid.New(),
+	}
+
+	complaint_progess, err := testQueries.CreateComplaintProgress(context.Background(), args)
+	require.NoError(t, err)
+	require.NotEmpty(t, complaint_progess)
+
+}
+
+func TestCreateComplaintProgress(t *testing.T) {
+	createRandomProgress(t)
+}
+
+func TestFetchComplaintProgess(t *testing.T) {
+	complaint_id, _ := uuid.Parse("2661eccf-6dbd-4927-9c1b-e6b3316713f7")
+
+	complaints, err := testQueries.FetchComplaintProgress(context.Background(), complaint_id)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, complaints)
+}
+
+func TestDeleteComplaintProgress(t *testing.T) {
+
+	id, _ := uuid.Parse("40501426-a017-4845-bd90-d9a553fdaeb8")
+
+	result, err := testQueries.DeleteComplaintProgressById(context.Background(), id)
+
+	require.NoError(t, err)
+	affected_rows, _ := result.RowsAffected()
+	require.NotZero(t, affected_rows)
+}
