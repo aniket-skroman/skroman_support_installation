@@ -16,6 +16,7 @@ type FetchAllocatedComplaintByEmpDTO struct {
 	OnDate           string                   `json:"client_available_date"`
 	TimeSlot         string                   `json:"time_slot"`
 	ClientID         string                   `json:"client_id"`
+	Status           string                   `json:"status,omitempty"`
 }
 
 type FetchAllocatedComplaintRequestDTO struct {

@@ -88,16 +88,16 @@ func (serv *installation_user) fetch_users_today_complaint(args db.FetchAllocate
 			defer wg.Done()
 			day_month := fmt.Sprintf("%d %v", complaint.OnDate.Time.Day(), complaint.OnDate.Time.Month())
 			complaints[i] = dto.FetchAllocatedComplaintByEmpDTO{
-				ComplaintID:      complaint.ComplaintID,
-				AllocationID:     complaint.AllocationID,
-				ComplaintInfoID:  complaint.ComplaintInfoID,
-				ComplaintAddress: complaint.ComplaintAddress.String,
-				OnDate:           day_month,
-				TimeSlot:         complaint.TimeSlot.String,
-				ClientID:         complaint.ClientID,
+				ComplaintID:     complaint.ComplaintID,
+				AllocationID:    complaint.AllocationID,
+				ComplaintInfoID: complaint.ComplaintInfoID,
+				OnDate:          day_month,
+				TimeSlot:        complaint.TimeSlot.String,
+				ClientID:        complaint.ClientID,
 			}
 
 			client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
+
 			if err == nil && client_info != nil {
 				rv := reflect.ValueOf(client_info)
 				complaints[i].ClientInfo = proxycalls.ClientInfoDTO{
@@ -106,6 +106,7 @@ func (serv *installation_user) fetch_users_today_complaint(args db.FetchAllocate
 					MobileNumber: fmt.Sprintf("%v", rv.FieldByName("Contact")),
 				}
 
+				complaints[i].ComplaintAddress = fmt.Sprintf("%v", rv.FieldByName("Address"))
 			}
 
 		}(complaint, i)
