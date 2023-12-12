@@ -51,16 +51,24 @@ func (serv *installation_user) FetchAllocatedComplaintByEmp(req dto.FetchAllocat
 	var result []dto.FetchAllocatedComplaintByEmpDTO
 
 	if req.AllocationTag == "Today" || req.AllocationTag == "today" {
+		current_date := time.Now().AddDate(0, 0, -1)
+		date := current_date.Format("2006-01-02")
+		date_, _ := time.Parse("2006-01-02", date)
+
 		args := db.FetchAllocatedComplaintByEmpTodayParams{
 			AllocatedTo: allocated_obj_id,
-			CreatedAt:   time.Now(),
+			CreatedAt:   date_,
 		}
 
 		result, err = serv.fetch_users_today_complaint(args)
 	} else {
+		current_date := time.Now()
+		date := current_date.Format("2006-01-02")
+		date_, _ := time.Parse("2006-01-02", date)
+
 		args := db.FetchAllocatedComplaintsByEmpPendingParams{
 			AllocatedTo: allocated_obj_id,
-			CreatedAt:   time.Now().AddDate(0, 0, -1),
+			CreatedAt:   date_,
 		}
 		result, err = serv.fetch_users_pending_complaints(args)
 	}
@@ -109,6 +117,10 @@ func (serv *installation_user) fetch_users_today_complaint(args db.FetchAllocate
 				complaints[i].ComplaintAddress = fmt.Sprintf("%v", rv.FieldByName("Address"))
 			}
 
+			if complaint.Status != "ALLOCATE" && complaint.Status != "INIT" {
+				complaints[i].Status = complaint.Status
+			}
+
 		}(complaint, i)
 
 	}
@@ -143,6 +155,7 @@ func (serv *installation_user) fetch_users_pending_complaints(args db.FetchAlloc
 				OnDate:           day_month,
 				TimeSlot:         complaint.TimeSlot.String,
 				ClientID:         complaint.ClientID,
+				Status:           complaint.Status,
 			}
 
 			client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
@@ -153,6 +166,7 @@ func (serv *installation_user) fetch_users_pending_complaints(args db.FetchAlloc
 					EmailID:      fmt.Sprintf("%v", rv.FieldByName("Email")),
 					MobileNumber: fmt.Sprintf("%v", rv.FieldByName("Contact")),
 				}
+				complaints[i].ComplaintAddress = fmt.Sprintf("%v", rv.FieldByName("Address"))
 
 			}
 

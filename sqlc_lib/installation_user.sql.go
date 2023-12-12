@@ -60,6 +60,7 @@ select ca.complaint_id as complaint_id,
     ci.id as complaint_info_id,
     ci.complaint_address as complaint_address,
     ci.client_available_date as on_date,
+    ci.status as status,
     ci.client_available_time_slot as time_slot,
     compl.client_id
 from complaint_allocations as ca
@@ -68,7 +69,7 @@ on ca.complaint_id = ci.complaint_id
 right join complaints as compl
 on ca.complaint_id = compl.id
 where ca.allocated_to =$1 and compl.client_id not like '%User_id%'
-and ca.created_at < $2 
+and ca.created_at > $2 
 order by ca.created_at desc
 `
 
@@ -83,6 +84,7 @@ type FetchAllocatedComplaintByEmpTodayRow struct {
 	ComplaintInfoID  uuid.UUID      `json:"complaint_info_id"`
 	ComplaintAddress sql.NullString `json:"complaint_address"`
 	OnDate           sql.NullTime   `json:"on_date"`
+	Status           string         `json:"status"`
 	TimeSlot         sql.NullString `json:"time_slot"`
 	ClientID         string         `json:"client_id"`
 }
@@ -102,6 +104,7 @@ func (q *Queries) FetchAllocatedComplaintByEmpToday(ctx context.Context, arg Fet
 			&i.ComplaintInfoID,
 			&i.ComplaintAddress,
 			&i.OnDate,
+			&i.Status,
 			&i.TimeSlot,
 			&i.ClientID,
 		); err != nil {
@@ -125,6 +128,7 @@ select
     ci.id as complaint_info_id,
     ci.complaint_address as complaint_address,
     ci.client_available_date as on_date,
+    ci.status as status,
     ci.client_available_time_slot as time_slot,
     compl.client_id
 from complaint_allocations as ca
@@ -133,7 +137,7 @@ on ca.complaint_id = ci.complaint_id
 right join complaints as compl
 on ca.complaint_id = compl.id
 where ca.allocated_to =$1 and compl.client_id not like '%User_id%'
-and ca.created_at < $2 
+and ca.created_at < $2
 order by ca.created_at desc
 `
 
@@ -148,6 +152,7 @@ type FetchAllocatedComplaintsByEmpPendingRow struct {
 	ComplaintInfoID  uuid.UUID      `json:"complaint_info_id"`
 	ComplaintAddress sql.NullString `json:"complaint_address"`
 	OnDate           sql.NullTime   `json:"on_date"`
+	Status           string         `json:"status"`
 	TimeSlot         sql.NullString `json:"time_slot"`
 	ClientID         string         `json:"client_id"`
 }
@@ -167,6 +172,7 @@ func (q *Queries) FetchAllocatedComplaintsByEmpPending(ctx context.Context, arg 
 			&i.ComplaintInfoID,
 			&i.ComplaintAddress,
 			&i.OnDate,
+			&i.Status,
 			&i.TimeSlot,
 			&i.ClientID,
 		); err != nil {
