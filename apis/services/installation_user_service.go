@@ -22,6 +22,7 @@ type InstallationUserService interface {
 	FetchComplaintProgress(req string) ([]db.ComplaintProgress, error)
 	DeleteComplaintProgress(req string) error
 	MakeVerificationPendingStatus(complaint_id string) error
+	FetchAllocatedCompletComplaint(allocated_to string) ([]dto.FetchAllocatedComplaintByEmpDTO, error)
 }
 
 type installation_user struct {
@@ -276,4 +277,62 @@ func (serv *installation_user) MakeVerificationPendingStatus(complaint_id string
 	}
 
 	return nil
+}
+
+func (serv *installation_user) FetchAllocatedCompletComplaint(allocated_to string) ([]dto.FetchAllocatedComplaintByEmpDTO, error) {
+	allocated_obj_id, err := uuid.Parse(allocated_to)
+
+	if err != nil {
+		return nil, helper.ERR_INVALID_ID
+	}
+
+	result, err := serv.installation_repo.FetchAllocatedCompletComplaint(allocated_obj_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, sql.ErrNoRows
+	}
+	complaints := make([]dto.FetchAllocatedComplaintByEmpDTO, len(result))
+	wg := sync.WaitGroup{}
+	wg.Add(len(result))
+	for i, complaint := range result {
+
+		go func(complaint db.FetchAllocatedCompletComplaintRow, i int) {
+			defer wg.Done()
+			day_month := fmt.Sprintf("%d %v", complaint.OnDate.Time.Day(), complaint.OnDate.Time.Month())
+			complaints[i] = dto.FetchAllocatedComplaintByEmpDTO{
+				ComplaintID:     complaint.ComplaintID,
+				AllocationID:    complaint.AllocationID,
+				ComplaintInfoID: complaint.ComplaintInfoID,
+				OnDate:          day_month,
+				TimeSlot:        complaint.TimeSlot.String,
+				ClientID:        complaint.ClientID,
+			}
+
+			client_info, err := serv.complaint_service.Fetch_client_info(complaint.ClientID)
+
+			if err == nil && client_info != nil {
+				rv := reflect.ValueOf(client_info)
+				complaints[i].ClientInfo = proxycalls.ClientInfoDTO{
+					UserName:     fmt.Sprintf("%v", rv.FieldByName("UserName")),
+					EmailID:      fmt.Sprintf("%v", rv.FieldByName("Email")),
+					MobileNumber: fmt.Sprintf("%v", rv.FieldByName("Contact")),
+				}
+
+				complaints[i].ComplaintAddress = fmt.Sprintf("%v", rv.FieldByName("Address"))
+			}
+
+			if complaint.Status != "ALLOCATE" && complaint.Status != "INIT" {
+				complaints[i].Status = complaint.Status
+			}
+
+		}(complaint, i)
+
+	}
+	wg.Wait()
+	return complaints, nil
+
 }

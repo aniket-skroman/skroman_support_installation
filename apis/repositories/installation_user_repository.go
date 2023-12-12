@@ -17,6 +17,7 @@ type InstallationUserRepository interface {
 	CreateComplaintProgress(args db.CreateComplaintProgressParams) (db.ComplaintProgress, error)
 	FetchComplaintProgress(args uuid.UUID) ([]db.ComplaintProgress, error)
 	DeleteComplaintProgress(progress_id uuid.UUID) (sql.Result, error)
+	FetchAllocatedCompletComplaint(allocated_to uuid.UUID) ([]db.FetchAllocatedCompletComplaintRow, error)
 }
 
 type installation_user struct {

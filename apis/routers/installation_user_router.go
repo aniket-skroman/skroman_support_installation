@@ -32,5 +32,6 @@ func InstallationUserRouter(router *gin.Engine, db *apis.Store) {
 		complaint_progress.GET("/complaint_progress/:obj_id", installation_cont.FetchComplaintProgress)
 		complaint_progress.DELETE("/complaint_progress/:progress_id", installation_cont.DeleteComplaintProgress)
 		complaint_progress.PUT("/complaint_progress/:complaint_id", installation_cont.MakeVerificationPendingStatus)
+		complaint_progress.GET("/complaint_progress/complete/:allocate_id", installation_cont.FetchAllocatedCompletComplaint)
 	}
 }

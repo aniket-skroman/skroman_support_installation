@@ -41,3 +41,10 @@ func (repo *installation_user) DeleteComplaintProgress(progress_id uuid.UUID) (s
 
 	return repo.db.Queries.DeleteComplaintProgressById(ctx, progress_id)
 }
+
+func (repo *installation_user) FetchAllocatedCompletComplaint(allocated_to uuid.UUID) ([]db.FetchAllocatedCompletComplaintRow, error) {
+	ctx, cancel := repo.Init()
+	defer cancel()
+
+	return repo.db.Queries.FetchAllocatedCompletComplaint(ctx, allocated_to)
+}
