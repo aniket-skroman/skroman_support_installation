@@ -31,8 +31,8 @@ type s3_connection struct {
 
 func NewS3Connection() S3Connection {
 	return &s3_connection{
-		AccessKey:  "AKIA3VMV3LWI5C4UHX5Z",
-		SecretKey:  "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",
+		AccessKey:  "AKIA3VMV3LWIR6TTGJGK",
+		SecretKey:  "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",
 		Region:     "ap-south-1",
 		BucketName: "skromansupportbucket",
 	}
