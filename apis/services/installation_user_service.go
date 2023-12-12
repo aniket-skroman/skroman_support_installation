@@ -334,5 +334,4 @@ func (serv *installation_user) FetchAllocatedCompletComplaint(allocated_to strin
 	}
 	wg.Wait()
 	return complaints, nil
-
 }

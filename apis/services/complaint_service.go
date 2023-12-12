@@ -119,7 +119,7 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		count, _ := ser.count_complaints(req.TagKey)
@@ -142,71 +142,91 @@ func (ser *complaint_service) FetchAllComplaints(req dto.PaginationRequestParams
 		return nil, err
 	}
 
-	result := []dto.ComplaintInfoDTO{}
+	wg.Wait()
 	if _, ok := complaints.([]db.FetchAllComplaintsRow); ok {
-		if len(complaints.([]db.FetchAllComplaintsRow)) == 0 {
-			return nil, sql.ErrNoRows
-		}
+		return ser.set_fetch_all_complaints_data(complaints.([]db.FetchAllComplaintsRow)...)
+	}
+	return ser.set_fetch_total_complaints_data(complaints.([]db.FetchTotalComplaintsRow)...)
 
-		result = make([]dto.ComplaintInfoDTO, len(complaints.([]db.FetchAllComplaintsRow)))
-		go func() {
-			defer wg.Done()
+}
 
-			t_wg := sync.WaitGroup{}
-			for i := range complaints.([]db.FetchAllComplaintsRow) {
-				t_wg.Add(2)
-
-				go func(i int) {
-					defer t_wg.Done()
-					if complaints.([]db.FetchAllComplaintsRow)[i].ClientID != "Default" && !strings.HasPrefix(complaints.([]db.FetchAllComplaintsRow)[i].ClientID, "User_id") {
-						client_data, _ := ser.Fetch_client_info(complaints.([]db.FetchAllComplaintsRow)[i].ClientID)
-						if client_data != nil {
-							rv := reflect.ValueOf(client_data)
-							result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
-						}
-					}
-				}(i)
-
-				go func(i int) {
-					dto.SetComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchAllComplaintsRow)[i])
-				}(i)
-
-			}
-			t_wg.Wait()
-		}()
-	} else {
-		if len(complaints.([]db.FetchTotalComplaintsRow)) == 0 {
-			return nil, sql.ErrNoRows
-		}
-		go func() {
-			defer wg.Done()
-			result = make([]dto.ComplaintInfoDTO, len(complaints.([]db.FetchTotalComplaintsRow)))
-			t_wg := sync.WaitGroup{}
-
-			for i := range complaints.([]db.FetchTotalComplaintsRow) {
-				t_wg.Add(2)
-
-				go func(i int) {
-					defer t_wg.Done()
-					if complaints.([]db.FetchTotalComplaintsRow)[i].ClientID != "Default" && !strings.HasPrefix(complaints.([]db.FetchTotalComplaintsRow)[i].ClientID, "User_id") {
-						client_data, _ := ser.Fetch_client_info(complaints.([]db.FetchTotalComplaintsRow)[i].ClientID)
-						if client_data != nil {
-							rv := reflect.ValueOf(client_data)
-							result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
-						}
-					}
-				}(i)
-
-				go func(i int) {
-					dto.SetComplaintInfoData(&t_wg, &result[i], &complaints.([]db.FetchTotalComplaintsRow)[i])
-				}(i)
-
-			}
-			t_wg.Wait()
-		}()
+func (ser *complaint_service) set_fetch_all_complaints_data(complaints ...db.FetchAllComplaintsRow) ([]dto.ComplaintInfoDTO, error) {
+	if len(complaints) == 0 {
+		return nil, sql.ErrNoRows
 	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	result := make([]dto.ComplaintInfoDTO, len(complaints))
+	go func() {
+		defer wg.Done()
+
+		t_wg := sync.WaitGroup{}
+		for i := range complaints {
+			t_wg.Add(2)
+
+			go func(i int) {
+				defer t_wg.Done()
+				if complaints[i].ClientID != "Default" && !strings.HasPrefix(complaints[i].ClientID, "User_id") {
+					client_data, _ := ser.Fetch_client_info(complaints[i].ClientID)
+					if client_data != nil {
+						rv := reflect.ValueOf(client_data)
+						result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
+						result[i].ComplaintAddress = fmt.Sprintf("%s", rv.FieldByName("Address"))
+					}
+				}
+			}(i)
+
+			go func(i int) {
+				dto.SetComplaintInfoData(&t_wg, &result[i], &complaints[i])
+			}(i)
+
+		}
+		t_wg.Wait()
+	}()
 	wg.Wait()
+
+	return result, nil
+}
+
+func (ser *complaint_service) set_fetch_total_complaints_data(complaints ...db.FetchTotalComplaintsRow) ([]dto.ComplaintInfoDTO, error) {
+	if len(complaints) == 0 {
+		return nil, sql.ErrNoRows
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	result := []dto.ComplaintInfoDTO{}
+	go func() {
+		defer wg.Done()
+		result = make([]dto.ComplaintInfoDTO, len(complaints))
+		t_wg := sync.WaitGroup{}
+
+		for i := range complaints {
+			t_wg.Add(2)
+
+			go func(i int) {
+				defer t_wg.Done()
+				if complaints[i].ClientID != "Default" && !strings.HasPrefix(complaints[i].ClientID, "User_id") {
+					client_data, _ := ser.Fetch_client_info(complaints[i].ClientID)
+					if client_data != nil {
+						rv := reflect.ValueOf(client_data)
+						result[i].ClientContact = fmt.Sprintf("%s", rv.FieldByName("Contact"))
+						result[i].ComplaintAddress = fmt.Sprintf("%s", rv.FieldByName("Address"))
+					}
+				}
+			}(i)
+
+			go func(i int) {
+				dto.SetComplaintInfoData(&t_wg, &result[i], &complaints[i])
+			}(i)
+
+		}
+		t_wg.Wait()
+	}()
+
+	wg.Wait()
+
 	return result, nil
 }
 

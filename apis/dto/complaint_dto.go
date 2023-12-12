@@ -41,7 +41,7 @@ type UpdateComplaintRequestDTO struct {
 type PaginationRequestParams struct {
 	PageID   int32  `uri:"page_id" binding:"required"`
 	PageSize int32  `uri:"page_size" binding:"required"`
-	TagKey   string `uri:"tag_key" binding:"required,oneof=INIT ALLOCATE COMPLETE TOTAL"`
+	TagKey   string `uri:"tag_key" binding:"required,oneof=INIT ALLOCATE COMPLETE TOTAL VERIFICATION-PENDING"`
 }
 
 type ImageRequestDTO struct {
