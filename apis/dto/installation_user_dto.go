@@ -21,7 +21,7 @@ type FetchAllocatedComplaintByEmpDTO struct {
 
 type FetchAllocatedComplaintRequestDTO struct {
 	AllocatedTo   string `form:"allocated_to" binding:"required"`
-	AllocationTag string `form:"allocation_tag" binding:"required,oneof=Today Pending pending today"`
+	AllocationTag string `form:"allocation_tag" binding:"required,oneof=Today Pending pending today complete Complete"`
 }
 
 type CreateComplaintProgressRequestDTO struct {

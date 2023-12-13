@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,7 +23,7 @@ type InstallationUserService interface {
 	FetchComplaintProgress(req string) ([]db.ComplaintProgress, error)
 	DeleteComplaintProgress(req string) error
 	MakeVerificationPendingStatus(complaint_id string) error
-	FetchAllocatedCompletComplaint(allocated_to string) ([]dto.FetchAllocatedComplaintByEmpDTO, error)
+	FetchAllocatedCompletComplaint(allocated_to uuid.UUID) ([]dto.FetchAllocatedComplaintByEmpDTO, error)
 }
 
 type installation_user struct {
@@ -50,22 +51,22 @@ func (serv *installation_user) FetchAllocatedComplaintByEmp(req dto.FetchAllocat
 	}
 
 	var result []dto.FetchAllocatedComplaintByEmpDTO
+	current_date := time.Now()
+	date := current_date.Format("2006-01-02")
+	date_, _ := time.Parse("2006-01-02", date)
 
-	if req.AllocationTag == "Today" || req.AllocationTag == "today" {
-		current_date := time.Now().AddDate(0, 0, -1)
-		date := current_date.Format("2006-01-02")
-		date_, _ := time.Parse("2006-01-02", date)
+	allcation_tag := strings.ToLower(req.AllocationTag)
+
+	if allcation_tag == "today" {
 
 		args := db.FetchAllocatedComplaintByEmpTodayParams{
 			AllocatedTo: allocated_obj_id,
 			CreatedAt:   date_,
 		}
-
 		result, err = serv.fetch_users_today_complaint(args)
+	} else if allcation_tag == "complete" {
+		result, err = serv.FetchAllocatedCompletComplaint(allocated_obj_id)
 	} else {
-		current_date := time.Now()
-		date := current_date.Format("2006-01-02")
-		date_, _ := time.Parse("2006-01-02", date)
 
 		args := db.FetchAllocatedComplaintsByEmpPendingParams{
 			AllocatedTo: allocated_obj_id,
@@ -279,14 +280,9 @@ func (serv *installation_user) MakeVerificationPendingStatus(complaint_id string
 	return nil
 }
 
-func (serv *installation_user) FetchAllocatedCompletComplaint(allocated_to string) ([]dto.FetchAllocatedComplaintByEmpDTO, error) {
-	allocated_obj_id, err := uuid.Parse(allocated_to)
+func (serv *installation_user) FetchAllocatedCompletComplaint(allocated_to uuid.UUID) ([]dto.FetchAllocatedComplaintByEmpDTO, error) {
 
-	if err != nil {
-		return nil, helper.ERR_INVALID_ID
-	}
-
-	result, err := serv.installation_repo.FetchAllocatedCompletComplaint(allocated_obj_id)
+	result, err := serv.installation_repo.FetchAllocatedCompletComplaint(allocated_to)
 
 	if err != nil {
 		return nil, err

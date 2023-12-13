@@ -19,7 +19,6 @@ type InstallationUserController interface {
 	FetchComplaintProgress(ctx *gin.Context)
 	DeleteComplaintProgress(ctx *gin.Context)
 	MakeVerificationPendingStatus(ctx *gin.Context)
-	FetchAllocatedCompletComplaint(ctx *gin.Context)
 }
 
 type installation_cont struct {
@@ -176,36 +175,5 @@ func (cont *installation_cont) MakeVerificationPendingStatus(ctx *gin.Context) {
 	}
 
 	cont.response = utils.BuildSuccessResponse(utils.UPDATE_SUCCESS, utils.COMPLAINT_DATA, nil)
-	ctx.JSON(http.StatusOK, cont.response)
-}
-
-func (cont *installation_cont) FetchAllocatedCompletComplaint(ctx *gin.Context) {
-	allocated_id := ctx.Param("allocate_id")
-
-	if allocated_id == "" {
-		cont.response = utils.BuildFailedResponse(utils.REQUIRED_PARAMS)
-		ctx.JSON(http.StatusBadRequest, cont.response)
-		return
-	}
-
-	result, err := cont.installation_serv.FetchAllocatedCompletComplaint(allocated_id)
-
-	if err != nil {
-		cont.response = utils.BuildFailedResponse(err.Error())
-
-		if err == helper.ERR_INVALID_ID {
-			ctx.JSON(http.StatusBadRequest, cont.response)
-			return
-		} else if err == sql.ErrNoRows {
-			cont.response = utils.BuildFailedResponse(helper.Err_Data_Not_Found.Error())
-			ctx.JSON(http.StatusNotFound, cont.response)
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, cont.response)
-		return
-	}
-
-	cont.response = utils.BuildSuccessResponse(utils.FETCHED_SUCCESS, utils.COMPLAINT_DATA, result)
 	ctx.JSON(http.StatusOK, cont.response)
 }
