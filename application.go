@@ -41,7 +41,7 @@ func (api *APIServer) make_db_connection() (*sql.DB, error) {
 
 func (api *APIServer) init_app_route() *gin.Engine {
 	r := gin.New()
-	r.Use(cors.Default())
+	r.Use(cors.New(CORSConfig()))
 
 	return r
 }
