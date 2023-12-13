@@ -166,7 +166,10 @@ select
 ) as comleted_complaints,
 (
     select count(*) from complaint_info where status = 'ALLOCATE'
-) as allocated_complaints
+) as allocated_complaints,
+(
+    select count(*) from complaint_info where status = 'VERIFICATION-PENDING'
+) as verification_complaints
 from complaints as c;
 
 

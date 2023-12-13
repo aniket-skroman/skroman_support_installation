@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"path"
-	"strings"
 
 	"github.com/aniket-skroman/skroman_support_installation/apis/dto"
 	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
@@ -151,14 +150,14 @@ func (cont *complaint_controller) FetchDeviceImageURL(ctx *gin.Context) {
 
 	respo := generateSignedS3URL(req.FilePath, req.Directory)
 	defer respo.Body.Close()
-	var content string
-	if strings.Contains(req.FilePath, ".MP4") || strings.Contains(req.FilePath, ".mp4") {
-		content = "video/mp4"
-	} else {
-		content = *respo.ContentType
-	}
+	// var content string
+	// if strings.Contains(req.FilePath, ".MP4") || strings.Contains(req.FilePath, ".mp4") {
+	// 	content = "video/mp4"
+	// } else {
+	// 	content = *respo.ContentType
+	// }
 
-	ctx.DataFromReader(http.StatusOK, *respo.ContentLength, content, respo.Body, nil)
+	ctx.DataFromReader(http.StatusOK, *respo.ContentLength, *respo.ContentType, respo.Body, nil)
 }
 
 func (cont *complaint_controller) FetchPDFFile(ctx *gin.Context) {

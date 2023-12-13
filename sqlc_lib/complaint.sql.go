@@ -66,15 +66,19 @@ select
 ) as comleted_complaints,
 (
     select count(*) from complaint_info where status = 'ALLOCATE'
-) as allocated_complaints
+) as allocated_complaints,
+(
+    select count(*) from complaint_info where status = 'VERIFICATION-PENDING'
+) as verification_complaints
 from complaints as c
 `
 
 type CountAllComplaintRow struct {
-	AllComplaints       int64 `json:"all_complaints"`
-	PendingComplaints   int64 `json:"pending_complaints"`
-	ComletedComplaints  int64 `json:"comleted_complaints"`
-	AllocatedComplaints int64 `json:"allocated_complaints"`
+	AllComplaints          int64 `json:"all_complaints"`
+	PendingComplaints      int64 `json:"pending_complaints"`
+	ComletedComplaints     int64 `json:"comleted_complaints"`
+	AllocatedComplaints    int64 `json:"allocated_complaints"`
+	VerificationComplaints int64 `json:"verification_complaints"`
 }
 
 func (q *Queries) CountAllComplaint(ctx context.Context) (CountAllComplaintRow, error) {
@@ -85,6 +89,7 @@ func (q *Queries) CountAllComplaint(ctx context.Context) (CountAllComplaintRow, 
 		&i.PendingComplaints,
 		&i.ComletedComplaints,
 		&i.AllocatedComplaints,
+		&i.VerificationComplaints,
 	)
 	return i, err
 }

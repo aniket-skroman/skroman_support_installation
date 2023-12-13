@@ -77,12 +77,13 @@ type MonthWiseCounts struct {
 }
 
 type AllComplaintsCount struct {
-	AllComplaints       int64             `json:"all_complaints"`
-	PendingComplaints   int64             `json:"pending_complaints"`
-	CompletedComplaints int64             `json:"completed_complaints"`
-	AllocatedComplaints int64             `json:"allocated_complaints"`
-	EmpCount            int64             `json:"client_count"`
-	MonthWiseCounts     []MonthWiseCounts `json:"month_data"`
+	AllComplaints          int64             `json:"all_complaints"`
+	PendingComplaints      int64             `json:"pending_complaints"`
+	CompletedComplaints    int64             `json:"completed_complaints"`
+	AllocatedComplaints    int64             `json:"allocated_complaints"`
+	VerificationComplaints int64             `json:"verification_complaints"`
+	EmpCount               int64             `json:"client_count"`
+	MonthWiseCounts        []MonthWiseCounts `json:"month_data"`
 }
 
 type ComplaintInfoByComplaintDTO struct {

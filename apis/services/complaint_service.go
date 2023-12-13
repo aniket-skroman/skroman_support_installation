@@ -739,6 +739,7 @@ func (ser *complaint_service) FetchAllComplaintCounts() dto.AllComplaintsCount {
 			result.AllocatedComplaints = data.AllocatedComplaints
 			result.CompletedComplaints = data.ComletedComplaints
 			result.PendingComplaints = data.PendingComplaints
+			result.VerificationComplaints = data.VerificationComplaints
 		}
 	}()
 
