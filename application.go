@@ -80,4 +80,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// n := notifications.Notification{}
+	// n.MsgTitle = "Skroman-Test"
+	// n.MsgBody = "Skroman Notification Body"
+	// registrationToken := "dS4v5CAfTSGdtoXerZ7tzo:APA91bH-yOS2S3uer8-MP5DBB4hYjJ8v9Wo7u9o-yDp0II5V08Alico6layWO0ugRuK51NNnQWJJfu6FKyCICrFdVNS6GxgWxQa3LCWsmOn5ngL0DtqA06Rnx6aroBFlPhm2a5nfPGuv"
+	// n.RegistrationToken = registrationToken
+	// app, _, _ := n.SetupFirebase()
+	// n.SendToToken(app)
 }

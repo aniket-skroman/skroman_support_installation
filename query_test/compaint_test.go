@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aniket-skroman/skroman_support_installation/notifications"
 	db "github.com/aniket-skroman/skroman_support_installation/sqlc_lib"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/aws/aws-sdk-go/aws"
@@ -493,4 +494,18 @@ func TestFetchComplaintsByClients(t *testing.T) {
 		fmt.Printf("%v+\n", result[i])
 	}
 	require.NotZero(t, result)
+}
+
+func TestNotifications(t *testing.T) {
+	notifacation := notifications.Notification{}
+	registrationToken := "dS4v5CAfTSGdtoXerZ7tzo:APA91bH-yOS2S3uer8-MP5DBB4hYjJ8v9Wo7u9o-yDp0II5V08Alico6layWO0ugRuK51NNnQWJJfu6FKyCICrFdVNS6GxgWxQa3LCWsmOn5ngL0DtqA06Rnx6aroBFlPhm2a5nfPGuv"
+
+	notifacation.MsgTitle = "Skroman-Test"
+	notifacation.MsgBody = "Skroman test msg..."
+	notifacation.RegistrationToken = registrationToken
+
+	app, _, _ := notifacation.SetupFirebase()
+
+	notifacation.SendToToken(app)
+
 }

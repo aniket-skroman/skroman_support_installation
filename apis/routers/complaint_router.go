@@ -21,7 +21,7 @@ var (
 func ComplaintRouter(router *gin.Engine, store *apis.Store) {
 	complaint_repo = repositories.NewComplaintRepository(store)
 	allocation_repo = repositories.NewComplaintAllocationRepository(store)
-	allocation_ser = services.NewComplaintAllocationService(allocation_repo)
+	allocation_ser = services.NewComplaintAllocationService(allocation_repo, jwt_service)
 	jwt_service = services.NewJWTService()
 	complaint_serv = services.NewComplaintService(complaint_repo, jwt_service, allocation_ser)
 	complaint_cont = controller.NewComplaintController(complaint_serv)

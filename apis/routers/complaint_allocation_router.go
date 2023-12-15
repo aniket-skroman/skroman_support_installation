@@ -13,7 +13,7 @@ func ComplaintAllocationRouter(router *gin.Engine, store *apis.Store) {
 	var (
 		allocation_repo = repositories.NewComplaintAllocationRepository(store)
 
-		allocation_ser  = services.NewComplaintAllocationService(allocation_repo)
+		allocation_ser  = services.NewComplaintAllocationService(allocation_repo, jwt_service)
 		allocation_cont = controller.NewComplaintAllocationController(allocation_ser)
 	)
 
