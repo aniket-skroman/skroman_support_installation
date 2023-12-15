@@ -78,11 +78,12 @@ func (ser *allocation_service) AllocateComplaint(req dto.CreateAllocationRequest
 
 	// fetch the fcm token to notify that user
 	go func() {
+		defer wg.Done()
 		for {
 			if _, ok := <-is_allocation_done; !ok {
 				break
 			} else {
-				ser.notify_user(allocate_to, &wg)
+				//ser.notify_user(allocate_to, &wg)
 				close(is_allocation_done)
 			}
 		}
