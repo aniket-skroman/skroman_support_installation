@@ -13,12 +13,21 @@ import (
 )
 
 func CORSConfig() cors.Config {
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:3000", "http://13.234.110.115:3000"}
-	corsConfig.AllowCredentials = true
-	corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers", "Content-Type", "X-XSRF-TOKEN", "Accept", "Origin", "X-Requested-With", "Authorization")
-	corsConfig.AddAllowMethods("GET", "POST", "PUT", "DELETE")
-	return corsConfig
+	// corsConfig := cors.DefaultConfig()
+	// corsConfig.AllowOrigins = []string{"http://localhost:3000", "http://13.234.110.115:3000"}
+	// corsConfig.AllowCredentials = true
+	// corsConfig.AddAllowHeaders("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers", "Content-Type", "X-XSRF-TOKEN", "Accept", "Origin", "X-Requested-With", "Authorization")
+	// corsConfig.AddAllowMethods("GET", "POST", "PUT", "DELETE")
+	// return corsConfig
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowCredentials = true
+	config.AddAllowHeaders("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers", "Content-Type", "X-XSRF-TOKEN", "Accept", "Origin", "X-Requested-With", "Authorization")
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+
+	return config
+
 }
 
 const (
