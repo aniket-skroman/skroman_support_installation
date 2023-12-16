@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/aniket-skroman/skroman_support_installation/apis/helper"
 	"github.com/aniket-skroman/skroman_support_installation/apis/services"
 	"github.com/aniket-skroman/skroman_support_installation/utils"
 	"github.com/dgrijalva/jwt-go"
@@ -40,8 +39,8 @@ func AuthorizeJWT(jwtService services.JWTService) gin.HandlerFunc {
 			claims := token.Claims.(jwt.MapClaims)
 			utils.TOKEN_ID = fmt.Sprintf("%v", claims["user_id"])
 			utils.USER_TYPE = fmt.Sprintf("%v", claims["user_type"])
-			utils.TOKEN_ID, _ = helper.DecryptData(utils.TOKEN_ID)
-			utils.USER_TYPE, _ = helper.DecryptData(utils.USER_TYPE)
+			//utils.TOKEN_ID, _ = helper.DecryptData(utils.TOKEN_ID)
+			//utils.USER_TYPE, _ = helper.DecryptData(utils.USER_TYPE)
 		}
 
 	}
