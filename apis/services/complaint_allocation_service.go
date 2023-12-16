@@ -83,7 +83,7 @@ func (ser *allocation_service) AllocateComplaint(req dto.CreateAllocationRequest
 			if _, ok := <-is_allocation_done; !ok {
 				break
 			} else {
-				ser.notify_user(allocate_to, &wg)
+				//ser.notify_user(allocate_to, &wg)
 				close(is_allocation_done)
 			}
 		}
@@ -221,7 +221,7 @@ func (ser *allocation_service) fetch_fcm_tokens(user_id uuid.UUID) ([]string, er
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("")
 	if response.StatusCode == http.StatusOK {
 
 		response_data := struct {

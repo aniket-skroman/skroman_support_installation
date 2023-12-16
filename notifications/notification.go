@@ -3,7 +3,6 @@ package notifications
 import (
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 
 	firebase "firebase.google.com/go"
@@ -40,28 +39,26 @@ func (n *Notification) SetupFirebase() (*firebase.App, context.Context, *messagi
 	return app, ctx, client
 }
 
-func (n *Notification) SendToToken(app *firebase.App) {
+func (n *Notification) SendToToken(app *firebase.App) error {
 	ctx := context.Background()
 	client, err := app.Messaging(ctx)
 	if err != nil {
-		log.Fatalf("error getting Messaging client: %v\n", err)
+		return err
 	}
 
-	for i := 0; i < 5; i++ {
-		message := &messaging.Message{
-			Notification: &messaging.Notification{
-				Title:    n.MsgTitle,
-				Body:     n.MsgBody,
-				ImageURL: "http://15.207.19.172:9000/api/device-file/media/upload-3760796307.png",
-			},
-			Token: n.RegistrationToken,
-		}
-
-		response, err := client.Send(ctx, message)
-		if err != nil {
-			log.Fatalln("Error throwing..", err)
-		}
-		fmt.Println("Successfully sent message:	", response)
+	message := &messaging.Message{
+		Notification: &messaging.Notification{
+			Title:    n.MsgTitle,
+			Body:     n.MsgBody,
+			ImageURL: "http://15.207.19.172:9000/api/device-file/media/upload-3760796307.png",
+		},
+		Token: n.RegistrationToken,
 	}
-	// fmt.Println("Successfully sent message:", response)
+
+	response, err := client.Send(ctx, message)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully sent message:	", response)
+	return nil
 }
